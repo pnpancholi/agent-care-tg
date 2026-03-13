@@ -2,11 +2,13 @@ package main
 
 import (
 	bot "agent-care-tg/bot"
-	env "github.com/joho/godotenv"
-	tg "gopkg.in/telebot.v3"
+	"agent-care-tg/storage"
 	"log"
 	"os"
 	"time"
+
+	env "github.com/joho/godotenv"
+	tg "gopkg.in/telebot.v3"
 )
 
 func main() {
@@ -28,6 +30,8 @@ func main() {
 		log.Fatalf("[agent-care-tg]: Failed to create bot: %v", err)
 	}
 
+	db := storage.Connect()
+	defer db.Close()
 	handler := bot.NewHandler(agentBot)
 	handler.Register()
 	log.Printf("[agent-care-tg]: Authorized on account %s, bot is online", agentBot.Me.Username)
