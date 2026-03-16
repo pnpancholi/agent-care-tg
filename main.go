@@ -32,7 +32,8 @@ func main() {
 
 	db := storage.Connect()
 	defer db.Close()
-	handler := bot.NewHandler(agentBot)
+	store := storage.NewStore(db)
+	handler := bot.NewHandler(agentBot, store)
 	handler.Register()
 	log.Printf("[agent-care-tg]: Authorized on account %s, bot is online", agentBot.Me.Username)
 	agentBot.Start()
