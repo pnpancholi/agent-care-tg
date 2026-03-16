@@ -2,18 +2,21 @@ package bot
 
 import (
 	"agent-care-tg/models"
+	"agent-care-tg/storage"
 	tz "github.com/bradfitz/latlong"
 	tg "gopkg.in/telebot.v3"
+	"log"
 )
 
 type Handler struct {
 	bot      *tg.Bot
 	state    map[int64]string
 	userData map[int64]*models.User
+	store    *storage.Store
 }
 
-func NewHandler(bot *tg.Bot) *Handler {
-	return &Handler{bot: bot, state: make(map[int64]string), userData: make(map[int64]*models.User)}
+func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
+	return &Handler{bot: bot, state: make(map[int64]string), userData: make(map[int64]*models.User), store: store}
 }
 
 func (h *Handler) Register() {
@@ -53,7 +56,7 @@ func (h *Handler) handleGetStarted(c tg.Context) error {
 func (h *Handler) handleUserRegistration(c tg.Context) error {
 	switch h.state[c.Chat().ID] {
 	case "waiting_for_name":
-		h.userData[c.Chat().ID].PrefferedName = c.Text()
+		h.userData[c.Chat().ID].Username = c.Text()
 		h.state[c.Chat().ID] = "waiting_for_goal"
 		return c.Send("Nice to meet you " + c.Text() + "!" + "\n\nWhat's your personal goal?")
 	case "waiting_for_goal":
@@ -73,9 +76,20 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		}
 		h.userData[c.Chat().ID].Timezone = timezone
 		// ToDo: clear out state
-		// ToDo: save to db
+		user := h.userData[c.Chat().ID]
+		user.ChatID = c.Chat().ID
+		user.TGUsername = c.Sender().Username
+		user.Timezone = timezone
+
+		if err := h.store.SaveUser(user); err != nil {
+			log.Println("error", err)
+			return c.Send("Something went wrong with your profile. Please try again")
+		}
 		// ToDo: Get rid of buttons
-		return c.Send("Perfect! I am now setting up your profile")
+		//ToDo: Send a prep message
+		log.Println("New user registered", user.TGUsername)
+		c.Send("Thanks ! I am now setting up your profile...")
+		return c.Send("Perfect! You are all setup")
 
 	}
 	return nil
