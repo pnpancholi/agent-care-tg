@@ -2,6 +2,7 @@ package main
 
 import (
 	bot "agent-care-tg/bot"
+	"agent-care-tg/scheduler"
 	"agent-care-tg/storage"
 	"log"
 	"os"
@@ -35,6 +36,8 @@ func main() {
 	store := storage.NewStore(db)
 	handler := bot.NewHandler(agentBot, store)
 	handler.Register()
+	s := scheduler.New(store, agentBot)
+	s.Start()
 	log.Printf("[agent-care-tg]: Authorized on account %s, bot is online", agentBot.Me.Username)
 	agentBot.Start()
 
