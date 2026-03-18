@@ -41,37 +41,35 @@ func (s *Scheduler) Stop() {
 }
 
 func (s *Scheduler) SendMorningMessage() {
-	users, err := s.store.GetAllUsers()
-	if err != nil {
-		log.Println("Can not access users from DB", err)
-		return
-	}
-
-	for _, user := range users {
-		msg := "morning msg"
-		_, err := s.bot.Send(tg.ChatID(user.ChatID), msg)
-		if err != nil {
-			log.Println("Failed to send user their morning message", user.ChatID, err)
-		} else {
-			log.Println("Successfully sent user their morning message", user.ChatID)
-		}
-	}
+	s.sendMessageToAllUsers("Morning Message", "Morning Message")
 }
 
 func (s *Scheduler) CheckInForSunlight() {
+	s.sendMessageToAllUsers("Sunlight Check-In", "Sunlight Check-In Message")
+}
+
+func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
 	users, err := s.store.GetAllUsers()
 	if err != nil {
-		log.Println("Failed to access users from DB", err)
-		return
+		log.Println("Failed to access users from DB for : ", jobName)
+		log.Println("Erroe : ", err)
+		return err
 	}
 
 	for _, user := range users {
-		msg := "sunlight checkin"
+		//ToDo: Add a filtering system for message for safety
 		_, err := s.bot.Send(tg.ChatID(user.ChatID), msg)
+		// ToDo: handle partialfails
 		if err != nil {
-			log.Println("Failed to send user their sunlight check-in", user.ChatID, err)
+			log.Println("Failed to send users message for : ", jobName)
+			// ToDO: Clean up,this is here just for initial stage. Any sort personal info should needs to be removed post testing
+			log.Println("User : ", user.ChatID)
+			log.Println("Error : ", err)
+			return err
 		} else {
-			log.Println("Successfully sent users their sunlight check-in", user.ChatID)
+			log.Println("Successfully sent message to all users for job : ", jobName)
+			return nil
 		}
 	}
+	return nil
 }
