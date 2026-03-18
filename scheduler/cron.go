@@ -1,5 +1,6 @@
 package scheduler
 
+// ToDo : Add a logger for each cron job, type of message/reminder. number of users sent to, time, and error if any
 import (
 	"agent-care-tg/storage"
 	"github.com/robfig/cron/v3"
@@ -25,8 +26,10 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("*/10 * * * * *", func() {
 		log.Println("Scheduler Fired")
 	})
-	//Morning Routine
+	//Truggering Cron Jobs
 	s.cron.AddFunc("*/10 * * * * *", s.SendMorningMessage)
+	s.cron.AddFunc("*/10 * * * * *", s.CheckInForSunlight)
+
 	s.cron.Start()
 	log.Println("Scheduler Started...")
 }
@@ -51,6 +54,24 @@ func (s *Scheduler) SendMorningMessage() {
 			log.Println("Failed to send user their morning message", user.ChatID, err)
 		} else {
 			log.Println("Successfully sent user their morning message", user.ChatID)
+		}
+	}
+}
+
+func (s *Scheduler) CheckInForSunlight() {
+	users, err := s.store.GetAllUsers()
+	if err != nil {
+		log.Println("Failed to access users from DB", err)
+		return
+	}
+
+	for _, user := range users {
+		msg := "sunlight checkin"
+		_, err := s.bot.Send(tg.ChatID(user.ChatID), msg)
+		if err != nil {
+			log.Println("Failed to send user their sunlight check-in", user.ChatID, err)
+		} else {
+			log.Println("Successfully sent users their sunlight check-in", user.ChatID)
 		}
 	}
 }
