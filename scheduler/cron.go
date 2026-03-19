@@ -3,9 +3,10 @@ package scheduler
 // ToDo : Add a logger for each cron job, type of message/reminder. number of users sent to, time, and error if any
 import (
 	"agent-care-tg/storage"
+	"log"
+
 	"github.com/robfig/cron/v3"
 	tg "gopkg.in/telebot.v3"
-	"log"
 )
 
 type Scheduler struct {
@@ -26,7 +27,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("*/10 * * * * *", func() {
 		log.Println("Scheduler Fired")
 	})
-	//Truggering Cron Jobs
+	//Triggering Cron Jobs
 	s.cron.AddFunc("*/10 * * * * *", s.SendMorningMessage)
 	s.cron.AddFunc("*/10 * * * * *", s.CheckInForSunlight)
 
@@ -57,19 +58,35 @@ func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
 	}
 
 	for _, user := range users {
+		// ToDo: Make msg make context for yes or no response
 		//ToDo: Add a filtering system for message for safety
-		_, err := s.bot.Send(tg.ChatID(user.ChatID), msg)
-		// ToDo: handle partialfails
+		// Rendering buttons for each task with call back//
+		markup := &tg.ReplyMarkup{}
+		taskDoneBtnKey := jobName + "_task_done"
+		taskSkippedBtnKey := jobName + "_task_skipped"
+		taskDoneBtn := markup.Data("Yes", taskDoneBtnKey)
+		taskSkippedBtn := markup.Data("Skipped", taskSkippedBtnKey)
+		markup.Inline(markup.Row(taskDoneBtn, taskSkippedBtn))
+
+		_, err := s.bot.Send(tg.ChatID(user.ChatID), msg, markup)
+		// ToDo: handle partialfails for sending message
 		if err != nil {
 			log.Println("Failed to send users message for : ", jobName)
 			// ToDO: Clean up,this is here just for initial stage. Any sort personal info should needs to be removed post testing
 			log.Println("User : ", user.ChatID)
 			log.Println("Error : ", err)
-			return err
+			// Continue to next user on error
 		} else {
-			log.Println("Successfully sent message to all users for job : ", jobName)
-			return nil
+			log.Println("Successfully sent message to user ", user.ChatID, " for job : ", jobName)
 		}
 	}
 	return nil
 }
+
+//func checkForTime() {
+// get users time and then check against last_sent//
+// if itswithin 60mins of last sent
+// send a good job message
+// add streak
+// if not, mentioned failure and send a asupportive message
+//}
