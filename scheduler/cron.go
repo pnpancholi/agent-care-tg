@@ -28,8 +28,11 @@ func (s *Scheduler) Start() {
 		log.Println("Scheduler Fired")
 	})
 	//Triggering Cron Jobs
-	s.cron.AddFunc("*/10 * * * * *", s.SendMorningMessage)
-	s.cron.AddFunc("*/10 * * * * *", s.CheckInForSunlight)
+	s.cron.AddFunc("*/40 * * * * *", s.SendMorningMessage)
+	s.cron.AddFunc("*/40 * * * * *", s.CheckInForSunlight)
+	s.cron.AddFunc("*/40 * * * * *", s.CheckInForHealthyMeal)
+	s.cron.AddFunc("*/40 * * * * *", s.CheckInForPersonalGoal)
+	s.cron.AddFunc("*/40 * * * * *", s.CheckInForExcercise)
 
 	s.cron.Start()
 	log.Println("Scheduler Started...")
@@ -47,6 +50,18 @@ func (s *Scheduler) SendMorningMessage() {
 
 func (s *Scheduler) CheckInForSunlight() {
 	s.sendMessageToAllUsers("Sunlight Check-In", "Sunlight Check-In Message")
+}
+
+func (s *Scheduler) CheckInForHealthyMeal() {
+	s.sendMessageToAllUsers("Healthy Meal Check-In", "Did you have a nutritious meal today?")
+}
+
+func (s *Scheduler) CheckInForPersonalGoal() {
+	s.sendMessageToAllUsers("Personal Goal Check-In", "Did u work on that personal goal today?")
+}
+
+func (s *Scheduler) CheckInForExcercise() {
+	s.sendMessageToAllUsers("Excercise Check-In", "Did you get a chance to workout today?")
 }
 
 func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {

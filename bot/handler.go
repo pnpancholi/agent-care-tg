@@ -30,10 +30,10 @@ func (h *Handler) Register() {
 	h.bot.Handle(tg.OnCallback, func(c tg.Context) error {
 		data := c.Callback().Data
 		if strings.Contains(data, "task_done") {
-			return h.handleTaskCompleted()
+			return h.handleTaskCompleted(c)
 		}
 		if strings.Contains(data, "task_skipped") {
-			return h.handleTaskSkipped()
+			return h.handleTaskSkipped(c)
 		}
 		return nil
 	})
@@ -108,7 +108,7 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 	return nil
 }
 
-func (h *Handler) handleTaskCompleted() error {
+func (h *Handler) handleTaskCompleted(c tg.Context) error {
 	log.Println("Task completed clicked")
 	// mark streak
 	// send a positive message
@@ -116,7 +116,7 @@ func (h *Handler) handleTaskCompleted() error {
 	return nil
 }
 
-func (h *Handler) handleTaskSkipped() error {
+func (h *Handler) handleTaskSkipped(c tg.Context) error {
 	log.Println("Task skipped clicked")
 	// send a supportive message
 	// use c.respond
