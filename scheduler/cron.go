@@ -3,10 +3,10 @@ package scheduler
 // ToDo : Add a logger for each cron job, type of message/reminder. number of users sent to, time, and error if any
 import (
 	"agent-care-tg/storage"
-	"log"
-
 	"github.com/robfig/cron/v3"
 	tg "gopkg.in/telebot.v3"
+	"log"
+	"time"
 )
 
 type Scheduler struct {
@@ -47,27 +47,53 @@ func (s *Scheduler) Stop() {
 }
 
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
-	s.sendMessageToAllUsers("Morning Message", "Morning Message")
+	s.sendMessageToAllUsersInTimeZone(localHour, "Good Morning")
 }
 
 func (s *Scheduler) checkInForSunlight(localHour uint8) {
-	s.sendMessageToAllUsers("Sunlight Check-In", "Sunlight Check-In Message")
+	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for sunlight")
 }
 
 func (s *Scheduler) checkInForHealthyMeal(localHour uint8) {
-	s.sendMessageToAllUsers("Healthy Meal Check-In", "Did you have a nutritious meal today?")
+	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for healthy meal")
 }
 
 func (s *Scheduler) checkInForPersonalGoal(localHour uint8) {
-	s.sendMessageToAllUsers("Personal Goal Check-In", "Did u work on that personal goal today?")
+	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for personal goal")
 }
 
 func (s *Scheduler) checkInForExcercise(localHour uint8) {
-	s.sendMessageToAllUsers("Excercise Check-In", "Did you get a chance to workout today?")
+	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for excercise")
 }
 
-func (s *Scheduler) sendMessageToAllUsersInTimeZone() {
+func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
+	// check if last_sent was within last 5 mins//
+
+	// timezone match//
+	users, err := s.store.GetAllUsers()
+	if err != nil {
+		log.Println("Failed to access users from DB for sendMessageToAllUsersInTimeZone : ", err)
+		return
+	}
+
+	for _, user := range users {
+		loc, err := time.LoadLocation(user.Timezone)
+		if err != nil {
+			log.Println("Failed to convert timezone from DB object : ", err)
+		}
+
+		localTime := time.Now().In(loc)
+
+		if localTime.Hour() == int(hour) && localTime.Minute() < 10 {
+			_, err := s.bot.Send(tg.ChatID(user.ChatID), msg)
+			if err != nil {
+				log.Println("Failed to send message to : ", user.TGUsername)
+			}
+		}
+	}
+	// write to last_sent
 }
+
 func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
 	users, err := s.store.GetAllUsers()
 	if err != nil {
@@ -101,11 +127,3 @@ func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
 	}
 	return nil
 }
-
-//func checkForTime() {
-// get users time and then check against last_sent//
-// if itswithin 60mins of last sent
-// send a good job message
-// add streak
-// if not, mentioned failure and send a asupportive message
-//}
