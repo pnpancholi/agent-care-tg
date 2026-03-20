@@ -49,7 +49,7 @@ func (h *Handler) handleStart(c tg.Context) error {
 	}
 
 	for _, msg := range messages {
-		if err := c.Send(msg); err != nil {
+		if err := c.Send(msg, tg.ModeMarkdown); err != nil {
 			return err
 		}
 	}

@@ -17,7 +17,7 @@ type Scheduler struct {
 
 func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 	return &Scheduler{
-		cron:  cron.New(cron.WithSeconds()),
+		cron:  cron.New(),
 		store: store,
 		bot:   bot,
 	}
@@ -28,11 +28,11 @@ func (s *Scheduler) Start() {
 		log.Println("Scheduler Fired")
 	})
 	//Triggering Cron Jobs
-	s.cron.AddFunc("*/40 * * * * *", s.SendMorningMessage)
-	s.cron.AddFunc("*/40 * * * * *", s.CheckInForSunlight)
-	s.cron.AddFunc("*/40 * * * * *", s.CheckInForHealthyMeal)
-	s.cron.AddFunc("*/40 * * * * *", s.CheckInForPersonalGoal)
-	s.cron.AddFunc("*/40 * * * * *", s.CheckInForExcercise)
+	s.cron.AddFunc("0 0 7 * * *", s.SendMorningMessage)
+	s.cron.AddFunc("0 0 12 * * *", s.CheckInForSunlight)
+	s.cron.AddFunc("0 0 14 * * *", s.CheckInForHealthyMeal)
+	s.cron.AddFunc("0 0 21 * * *", s.CheckInForPersonalGoal)
+	s.cron.AddFunc("0 0 17 * * *", s.CheckInForExcercise)
 
 	s.cron.Start()
 	log.Println("Scheduler Started...")
