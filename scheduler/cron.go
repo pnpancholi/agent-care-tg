@@ -2,7 +2,9 @@ package scheduler
 
 // ToDo : Add a logger for each cron job, type of message/reminder. number of users sent to, time, and error if any
 import (
+	bot "agent-care-tg/bot"
 	"agent-care-tg/storage"
+	"fmt"
 	"github.com/robfig/cron/v3"
 	tg "gopkg.in/telebot.v3"
 	"log"
@@ -47,23 +49,23 @@ func (s *Scheduler) Stop() {
 }
 
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, "Good Morning")
+	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgMorningCheckIn)
 }
 
 func (s *Scheduler) checkInForSunlight(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for sunlight")
+	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgSunlightCheckIn)
 }
 
 func (s *Scheduler) checkInForHealthyMeal(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for healthy meal")
+	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgMealCheckIn)
 }
 
 func (s *Scheduler) checkInForPersonalGoal(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for personal goal")
+	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgPersonalGoalCheckIn)
 }
 
 func (s *Scheduler) checkInForExcercise(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, "Check in for excercise")
+	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgExcerciseCheckIn)
 }
 
 func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
@@ -85,7 +87,8 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
 		localTime := time.Now().In(loc)
 
 		if localTime.Hour() == int(hour) && localTime.Minute() < 10 {
-			_, err := s.bot.Send(tg.ChatID(user.ChatID), msg)
+			formattedMsg := fmt.Sprintf(msg, user.Username)
+			_, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, tg.ModeMarkdown)
 			if err != nil {
 				log.Println("Failed to send message to : ", user.TGUsername)
 			}
