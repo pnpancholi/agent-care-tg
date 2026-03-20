@@ -28,11 +28,13 @@ func (s *Scheduler) Start() {
 		log.Println("Scheduler Fired")
 	})
 	//Triggering Cron Jobs
-	s.cron.AddFunc("0 0 7 * * *", s.SendMorningMessage)
-	s.cron.AddFunc("0 0 12 * * *", s.CheckInForSunlight)
-	s.cron.AddFunc("0 0 14 * * *", s.CheckInForHealthyMeal)
-	s.cron.AddFunc("0 0 21 * * *", s.CheckInForPersonalGoal)
-	s.cron.AddFunc("0 0 17 * * *", s.CheckInForExcercise)
+	s.cron.AddFunc("0 */10 * * * *", func() {
+		s.sendMorningMessage(7)
+		s.checkInForSunlight(14)
+		s.checkInForHealthyMeal(14)
+		s.checkInForPersonalGoal(21)
+		s.checkInForExcercise(17)
+	})
 
 	s.cron.Start()
 	log.Println("Scheduler Started...")
@@ -44,26 +46,28 @@ func (s *Scheduler) Stop() {
 	})
 }
 
-func (s *Scheduler) SendMorningMessage() {
+func (s *Scheduler) sendMorningMessage(localHour uint8) {
 	s.sendMessageToAllUsers("Morning Message", "Morning Message")
 }
 
-func (s *Scheduler) CheckInForSunlight() {
+func (s *Scheduler) checkInForSunlight(localHour uint8) {
 	s.sendMessageToAllUsers("Sunlight Check-In", "Sunlight Check-In Message")
 }
 
-func (s *Scheduler) CheckInForHealthyMeal() {
+func (s *Scheduler) checkInForHealthyMeal(localHour uint8) {
 	s.sendMessageToAllUsers("Healthy Meal Check-In", "Did you have a nutritious meal today?")
 }
 
-func (s *Scheduler) CheckInForPersonalGoal() {
+func (s *Scheduler) checkInForPersonalGoal(localHour uint8) {
 	s.sendMessageToAllUsers("Personal Goal Check-In", "Did u work on that personal goal today?")
 }
 
-func (s *Scheduler) CheckInForExcercise() {
+func (s *Scheduler) checkInForExcercise(localHour uint8) {
 	s.sendMessageToAllUsers("Excercise Check-In", "Did you get a chance to workout today?")
 }
 
+func (s *Scheduler) sendMessageToAllUsersInTimeZone() {
+}
 func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
 	users, err := s.store.GetAllUsers()
 	if err != nil {
