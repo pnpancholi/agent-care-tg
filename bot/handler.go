@@ -3,9 +3,11 @@ package bot
 import (
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
+	"log"
+	"strings"
+
 	tz "github.com/bradfitz/latlong"
 	tg "gopkg.in/telebot.v3"
-	"log"
 )
 
 type Handler struct {
@@ -24,6 +26,17 @@ func (h *Handler) Register() {
 	h.bot.Handle("Get Started", h.handleGetStarted)
 	h.bot.Handle(tg.OnText, h.handleUserRegistration)
 	h.bot.Handle(tg.OnLocation, h.handleUserRegistration)
+	// handling reponse to task check-ins
+	h.bot.Handle(tg.OnCallback, func(c tg.Context) error {
+		data := c.Callback().Data
+		if strings.Contains(data, "task_done") {
+			return h.handleTaskCompleted(c)
+		}
+		if strings.Contains(data, "task_skipped") {
+			return h.handleTaskSkipped(c)
+		}
+		return nil
+	})
 }
 
 func (h *Handler) handleStart(c tg.Context) error {
@@ -36,7 +49,7 @@ func (h *Handler) handleStart(c tg.Context) error {
 	}
 
 	for _, msg := range messages {
-		if err := c.Send(msg); err != nil {
+		if err := c.Send(msg, tg.ModeMarkdown); err != nil {
 			return err
 		}
 	}
@@ -92,5 +105,20 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		return c.Send("Perfect! You are all setup")
 
 	}
+	return nil
+}
+
+func (h *Handler) handleTaskCompleted(c tg.Context) error {
+	log.Println("Task completed clicked")
+	// mark streak
+	// send a positive message
+	// use c.respond //
+	return nil
+}
+
+func (h *Handler) handleTaskSkipped(c tg.Context) error {
+	log.Println("Task skipped clicked")
+	// send a supportive message
+	// use c.respond
 	return nil
 }
