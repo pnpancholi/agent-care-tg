@@ -34,7 +34,7 @@ jobs:
 
       - name: Copy deploy script to VM
         run: |
-          gcloud compute scp ./deploy.sh ${{ secrets.GCP_VM_NAME }}:~ \
+          gcloud compute scp .github/workflows/deploy.sh ${{ secrets.GCP_VM_NAME }}:~ \
           --zone ${{ secrets.GCP_VM_ZONE }}
 
       - name: Deploy on VM
