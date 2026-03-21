@@ -32,10 +32,13 @@ jobs:
           gcloud compute scp agent-care-bot.tar.gz ${{ secrets.GCP_VM_NAME }}:~ \
             --zone ${{ secrets.GCP_VM_ZONE }}
 
+      - name: Copy deploy script to VM
+        run: |
+          gcloud compute scp ./deploy.sh ${{ secrets.GCP_VM_NAME }}:~ \
+          --zone ${{ secrets.GCP_VM_ZONE }}
+
       - name: Deploy on VM
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
-            --zone ${{ secrets.GCP_VM_ZONE }} \
-            --command "sudo docker load < agent-care-bot.tar.gz && sudo docker stop agent-care-bot; sudo docker rm agent-care-bot; sudo docker run -d --name agent-care-bot --restart always --env TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }} --env DATABASE_URL='${{ secrets.DATABASE_URL }}' agent-care-bot"
-
-      
+          --zone ${{ secrets.GCP_VM_ZONE }} \
+          --command "TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }} DATABASE_URL=${{ secrets.DATABASE_URL }} bash ~/deploy.sh"     
