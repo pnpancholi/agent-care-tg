@@ -6,7 +6,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o agent .
+RUN go build -o agent-care-bot .
 
-CMD ["./agent"]
+CMD ["./agent-care-bot"]
 
