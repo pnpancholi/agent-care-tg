@@ -13,7 +13,9 @@ import (
 )
 
 func main() {
-	err := env.Load()
+	_, err := os.Stat(".env"); err == nil {
+		env.Load()
+	}
 	if err != nil {
 		log.Fatal("[agent-care-tg]: Failed to load environment variables")
 	}
