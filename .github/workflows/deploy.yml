@@ -37,15 +37,15 @@ jobs:
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
             --zone ${{ secrets.GCP_VM_ZONE }} \
             --command "
-              sudo docker load < agent-care-bot.tar.gz &&
-              sudo docker stop agent-care-bot || true &&
-              sudo docker rm agent-care-bot || true &&
-              sudo docker run -d \
-                --name agent-care-bot \
-                --restart always \
-                -e TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }} \
-                -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
-                agent-care-bot
-            "
+          sudo docker load < agent-care-bot.tar.gz
+          sudo docker stop agent-care-bot 2>/dev/null || true
+          sudo docker rm agent-care-bot 2>/dev/null || true
+          sudo docker run -d \
+            --name agent-care-bot \
+            --restart always \
+            -e TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }} \
+            -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+            agent-care-bot
+          "
 
-
+      
