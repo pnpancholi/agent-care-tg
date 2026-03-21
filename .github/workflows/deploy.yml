@@ -1,0 +1,51 @@
+name: Dev Deployment
+
+on:
+  push:
+    branches: 
+    - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+
+      - name: Build Docker image
+        run: docker build -t agent-care-bot .
+
+      - name: Save Docker image
+        run: docker save agent-care-bot | gzip > agent-care-bot.tar.gz
+
+      - name: Copy image to VM
+        run: |
+          gcloud compute scp agent-care-bot.tar.gz ${{ secrets.GCP_VM_NAME }}:~ \
+            --zone ${{ secrets.GCP_VM_ZONE }}
+
+      - name: Deploy on VM
+        run: |
+          gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
+            --zone ${{ secrets.GCP_VM_ZONE }} \
+            --command "
+              docker load < agent-care-bot.tar.gz &&
+              docker stop agent-care-bot || true &&
+              docker rm agent-care-bot || true &&
+              docker run -d \
+                --name agent-care-bot \
+                --restart always \
+                -e TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }} \
+                -e DATABASE_URL=${{ secrets.DATABASE_URL }} \
+                agent-care-bot
+            "
+
+
