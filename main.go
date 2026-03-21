@@ -13,11 +13,8 @@ import (
 )
 
 func main() {
-	_, err := os.Stat(".env"); err == nil {
+	if _, err := os.Stat(".env"); err == nil {
 		env.Load()
-	}
-	if err != nil {
-		log.Fatal("[agent-care-tg]: Failed to load environment variables")
 	}
 
 	token := os.Getenv("TG_BOT_TOKEN")
