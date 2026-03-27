@@ -87,8 +87,12 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
 		localTime := time.Now().In(loc)
 
 		if localTime.Hour() == int(hour) && localTime.Minute() < 10 {
+			markup := &tg.ReplyMarkup{}
+			doneBtn := markup.Data("Done", "task_completed")
+			skippedBtn := markup.Data("Skipped", "task_skipped")
+			markup.Inline(markup.Row(doneBtn, skippedBtn))
 			formattedMsg := fmt.Sprintf(msg, user.Username)
-			_, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, tg.ModeMarkdown)
+			_, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
 			if err != nil {
 				log.Println("Failed to send message to : ", user.TGUsername)
 			}

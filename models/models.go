@@ -9,12 +9,15 @@ type User struct {
 	Timezone     string       `json:"timezone" db:"timezone"`
 	PersonalGoal string       `json:"personal_goal" db:"personal_goal"`
 	LastSentAt   sql.NullTime `json:"last_sent_at" db:"last_sent_at"`
+	Tasks        []Task       `json:"tasks" db:"tasks"`
 }
 
 type Task struct {
-	Name      string `json:"name"`
-	Performed bool   `json:"performed"`
-	Streak    int64  `json:"streak"`
-	Time      string `json:"time"`
-	Expiry    string `json:"expiry,omitempty"`
+	Name            string `json:"name"`
+	ScheduledHour   uint8  `json:"scheduled_hour"`
+	IsActive        bool   `json:"is_active"`
+	isDefault       bool   `json:"is_default"`
+	CurrentStreak   uint64 `json:"current_streak"`
+	MaxStreak       uint64 `json:"max_streak"`
+	LastCompletedAt string `json:"last_completed_at"`
 }
