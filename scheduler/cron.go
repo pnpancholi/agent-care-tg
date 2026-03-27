@@ -26,7 +26,7 @@ func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
-	s.cron.AddFunc("*/10 * * * *", func() {
+	s.cron.AddFunc("*/1 * * * *", func() {
 		log.Println("Scheduler Triggered...")
 	})
 	//Triggering Cron Jobs
