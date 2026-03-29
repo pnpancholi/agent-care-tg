@@ -26,11 +26,11 @@ func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
-	s.cron.AddFunc("*/10 * * * * *", func() {
-		log.Println("Scheduler Fired")
+	s.cron.AddFunc("*/1 * * * *", func() {
+		log.Println("Scheduler Triggered...")
 	})
 	//Triggering Cron Jobs
-	s.cron.AddFunc("0 */10 * * * *", func() {
+	s.cron.AddFunc("*/10 * * * *", func() {
 		s.sendMorningMessage(7)
 		s.checkInForSunlight(14)
 		s.checkInForHealthyMeal(14)
@@ -87,8 +87,12 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
 		localTime := time.Now().In(loc)
 
 		if localTime.Hour() == int(hour) && localTime.Minute() < 10 {
+			markup := &tg.ReplyMarkup{}
+			doneBtn := markup.Data("Done", "task_completed")
+			skippedBtn := markup.Data("Skipped", "task_skipped")
+			markup.Inline(markup.Row(doneBtn, skippedBtn))
 			formattedMsg := fmt.Sprintf(msg, user.Username)
-			_, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, tg.ModeMarkdown)
+			_, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
 			if err != nil {
 				log.Println("Failed to send message to : ", user.TGUsername)
 			}

@@ -1,5 +1,5 @@
 -- +goose Up
-ALTER TABLE users ADD COLUMN last_sent_at TIMESTAMP;
+ALTER TABLE users ADD COLUMN tasks JSONB DEFAULT '[]'
 
 -- +goose Down
-ALTER TABLE users DROP COLUMN last_sent_at;
+ALTER TABLE users DROP COLUMN tasks;

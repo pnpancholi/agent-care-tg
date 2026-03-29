@@ -15,8 +15,8 @@ func NewStore(db *sqlx.DB) *Store {
 
 func (s *Store) SaveUser(user *models.User) error {
 	query := `
-		INSERT INTO users (chat_id, tg_username, username, personal_goal, timezone)
-		VALUES (:chat_id, :tg_username, :username, :personal_goal, :timezone)
+		INSERT INTO users (chat_id, tg_username, username, personal_goal, timezone, tasks)
+	VALUES (:chat_id, :tg_username, :username, :personal_goal, :timezone, :tasks)
 	`
 
 	_, err := s.db.NamedExec(query, user)
