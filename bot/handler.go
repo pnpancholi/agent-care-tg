@@ -61,7 +61,7 @@ func (h *Handler) handleStart(c tg.Context) error {
 }
 
 func (h *Handler) handleGetStarted(c tg.Context) error {
-	h.userData[c.Chat().ID] = &models.User{}
+	h.userData[c.Chat().ID] = models.NewUser()
 	h.state[c.Chat().ID] = "waiting_for_name"
 	return c.Send("What should I call you? (Just type your name or whatever you'd like to go by!)")
 }

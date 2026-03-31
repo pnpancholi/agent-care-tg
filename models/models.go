@@ -1,6 +1,13 @@
 package models
 
-import "database/sql"
+import (
+	"database/sql"
+	"database/sql/driver"
+	"encoding/json"
+	"fmt"
+)
+
+type Tasks []Task
 
 type User struct {
 	ChatID       int64        `json:"chat_id" db:"chat_id"`
@@ -9,7 +16,35 @@ type User struct {
 	Timezone     string       `json:"timezone" db:"timezone"`
 	PersonalGoal string       `json:"personal_goal" db:"personal_goal"`
 	LastSentAt   sql.NullTime `json:"last_sent_at" db:"last_sent_at"`
-	Tasks        []Task       `json:"tasks" db:"tasks"`
+	Tasks        Tasks        `json:"tasks" db:"tasks"`
+}
+
+func (t *Tasks) Scan(value any) error {
+	if value == nil {
+		*t = Tasks{}
+		return nil
+	}
+	switch v := value.(type) {
+	case []byte:
+		return json.Unmarshal(v, t)
+	case string:
+		return json.Unmarshal([]byte(v), t)
+	default:
+		return fmt.Errorf("Unsupported type: %T", v)
+	}
+}
+
+func (t Tasks) Value() (driver.Value, error) {
+	if t == nil {
+		return "[]", nil
+	}
+	return json.Marshal(t)
+}
+
+func NewUser() *User {
+	return &User{
+		Tasks: Tasks{},
+	}
 }
 
 type Task struct {
