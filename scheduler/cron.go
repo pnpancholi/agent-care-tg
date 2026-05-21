@@ -118,7 +118,7 @@ func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
 		//ToDo: Add a filtering system for message for safety
 		// Rendering buttons for each task with call back//
 		markup := &tg.ReplyMarkup{}
-		taskDoneBtnKey := jobName + "_task_done"
+		taskDoneBtnKey := jobName + "_task_completed"
 		taskSkippedBtnKey := jobName + "_task_skipped"
 		taskDoneBtn := markup.Data("Yes", taskDoneBtnKey)
 		taskSkippedBtn := markup.Data("Skipped", taskSkippedBtnKey)
