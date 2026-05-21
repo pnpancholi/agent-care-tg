@@ -23,13 +23,14 @@ func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 
 func (h *Handler) Register() {
 	h.bot.Handle("/start", h.handleStart)
-	h.bot.Handle("Get Started", h.handleGetStarted)
-	h.bot.Handle(tg.OnText, h.handleUserRegistration)
-	h.bot.Handle(tg.OnLocation, h.handleUserRegistration)
+	h.bot.Handle("Learn how it works", h.handleLearnHowItWorks)
+	//	h.bot.Handle("Get Started", h.handleGetStarted)
+	//	h.bot.Handle(tg.OnText, h.handleUserRegistration)
+	//	h.bot.Handle(tg.OnLocation, h.handleUserRegistration)
 	// handling reponse to task check-ins
 	h.bot.Handle(tg.OnCallback, func(c tg.Context) error {
 		data := c.Callback().Data
-		if strings.Contains(data, "task_done") {
+		if strings.Contains(data, "task_completed") {
 			return h.handleTaskCompleted(c)
 		}
 		if strings.Contains(data, "task_skipped") {
@@ -40,28 +41,26 @@ func (h *Handler) Register() {
 }
 
 func (h *Handler) handleStart(c tg.Context) error {
-	messages := []string{
-		MsgWelcome,
-		MsgDataCollection,
-		MsgHowItWorks,
-		MsgCheckInRule,
-		MsgInvite,
-	}
+	// 1. Send welcom message
+	c.Send(MsgWelcome, tg.ModeMarkdown)
 
-	for _, msg := range messages {
-		if err := c.Send(msg, tg.ModeMarkdown); err != nil {
-			return err
-		}
-	}
-	// trigger next step
-	markup := &tg.ReplyMarkup{ResizeKeyboard: true, OneTimeKeyboard: true}
-	btnGetStarted := markup.Text("Get Started")
-	markup.Reply(markup.Row(btnGetStarted))
-	return c.Send("Are you ready ?", markup)
+	// 2. Send data collection message and close keyboard
+	removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
+	c.Send(MsgDataCollection, removeKeyboard, tg.ModeMarkdown)
+
+	// 3. Present button for how it works
+	markup := &tg.ReplyMarkup{ResizeKeyboard: true}
+	btnHowItWorks := markup.Text("Learn how it works")
+	markup.Reply(markup.Row(btnHowItWorks))
+	return c.Send("Ready to learn how it works ?", markup)
+}
+
+func (h *Handler) handleLearnHowItWorks(c tg.Context) error {
+	return c.Send("ffff")
 }
 
 func (h *Handler) handleGetStarted(c tg.Context) error {
-	h.userData[c.Chat().ID] = &models.User{}
+	h.userData[c.Chat().ID] = models.NewUser()
 	h.state[c.Chat().ID] = "waiting_for_name"
 	return c.Send("What should I call you? (Just type your name or whatever you'd like to go by!)")
 }

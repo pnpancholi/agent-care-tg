@@ -26,16 +26,17 @@ func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
-	s.cron.AddFunc("*/1 * * * *", func() {
-		log.Println("Scheduler Triggered...")
-	})
-	//Triggering Cron Jobs
 	s.cron.AddFunc("*/10 * * * *", func() {
 		s.sendMorningMessage(7)
 		s.checkInForSunlight(14)
 		s.checkInForHealthyMeal(14)
 		s.checkInForPersonalGoal(21)
 		s.checkInForExcercise(17)
+	})
+
+	s.cron.AddFunc("*/1 * * * *", func() {
+
+		s.test()
 	})
 
 	s.cron.Start()
@@ -48,6 +49,9 @@ func (s *Scheduler) Stop() {
 	})
 }
 
+func (s *Scheduler) test() {
+	s.sendMessageToAllUsers("test", "test message")
+}
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
 	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgMorningCheckIn)
 }
@@ -114,7 +118,7 @@ func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
 		//ToDo: Add a filtering system for message for safety
 		// Rendering buttons for each task with call back//
 		markup := &tg.ReplyMarkup{}
-		taskDoneBtnKey := jobName + "_task_done"
+		taskDoneBtnKey := jobName + "_task_completed"
 		taskSkippedBtnKey := jobName + "_task_skipped"
 		taskDoneBtn := markup.Data("Yes", taskDoneBtnKey)
 		taskSkippedBtn := markup.Data("Skipped", taskSkippedBtnKey)

@@ -7,7 +7,7 @@ Glad you're here — taking this first step already puts you ahead. I'm your per
 
 	MsgDataCollection = `*Data Collection*
 
-We collect a small amount of data — your goals and check-in responses — to send you reminders and encouragement that actually fit your life. We never sell your data. Ever.
+We collect a small amount of data — your goals and check-in responses — to send you reminders and encouragement that actually fit your life. We never sell your data. EVER.
 
 [Read our privacy policy](https://www.notion.so/pradhumna/your-link-here)`
 
