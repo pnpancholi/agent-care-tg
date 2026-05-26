@@ -24,9 +24,10 @@ func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 func (h *Handler) Register() {
 	h.bot.Handle("/start", h.handleStart)
 	h.bot.Handle("Learn how it works", h.handleLearnHowItWorks)
-	//	h.bot.Handle("Get Started", h.handleGetStarted)
-	//	h.bot.Handle(tg.OnText, h.handleUserRegistration)
-	//	h.bot.Handle(tg.OnLocation, h.handleUserRegistration)
+	h.bot.Handle("Get Started", h.handleGetStarted)
+	// This handles all the answers and their respective responses in user regiastration//
+	h.bot.Handle(tg.OnText, h.handleUserRegistration)
+	h.bot.Handle(tg.OnLocation, h.handleUserRegistration)
 	// handling reponse to task check-ins
 	h.bot.Handle(tg.OnCallback, func(c tg.Context) error {
 		data := c.Callback().Data
@@ -56,13 +57,16 @@ func (h *Handler) handleStart(c tg.Context) error {
 }
 
 func (h *Handler) handleLearnHowItWorks(c tg.Context) error {
-	return c.Send("ffff")
+	markup := &tg.ReplyMarkup{ResizeKeyboard: true}
+	btnGetStarted := markup.Text("Get Started")
+	markup.Reply(markup.Row(btnGetStarted))
+	return c.Send(MsgHowItWorks, markup)
 }
 
 func (h *Handler) handleGetStarted(c tg.Context) error {
 	h.userData[c.Chat().ID] = models.NewUser()
 	h.state[c.Chat().ID] = "waiting_for_name"
-	return c.Send("What should I call you? (Just type your name or whatever you'd like to go by!)")
+	return c.Send("What should I call you?")
 }
 
 func (h *Handler) handleUserRegistration(c tg.Context) error {
@@ -71,6 +75,7 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		h.userData[c.Chat().ID].Username = c.Text()
 		h.state[c.Chat().ID] = "waiting_for_goal"
 		return c.Send("Nice to meet you " + c.Text() + "!" + "\n\nWhat's your personal goal?")
+
 	case "waiting_for_goal":
 		h.userData[c.Chat().ID].PersonalGoal = c.Text()
 		h.state[c.Chat().ID] = "waiting_for_timezone"
@@ -78,6 +83,7 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		locationBtn := markup.Location("Share my location")
 		markup.Reply(markup.Row(locationBtn))
 		return c.Send(("Almost done! Please share your location so you can get reminders in your timezone"), markup)
+
 	case "waiting_for_timezone":
 		//capture response
 		lat := c.Message().Location.Lat
@@ -95,7 +101,7 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 
 		if err := h.store.SaveUser(user); err != nil {
 			log.Println("error", err)
-			return c.Send("Something went wrong with your profile. Please try again")
+			return c.Send("Something went wrong with your profile. Please try again later")
 		}
 		// ToDo: Get rid of buttons
 		//ToDo: Send a prep message
