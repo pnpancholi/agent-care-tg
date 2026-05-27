@@ -3,7 +3,7 @@ package bot
 import (
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
-	"log"
+	"log/slog"
 	"strings"
 
 	tz "github.com/bradfitz/latlong"
@@ -100,12 +100,12 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		user.Timezone = timezone
 
 		if err := h.store.SaveUser(user); err != nil {
-			log.Println("error", err)
+			slog.Error("Failed to save user", "error", err)
 			return c.Send("Something went wrong with your profile. Please try again later")
 		}
 		// ToDo: Get rid of buttons
 		//ToDo: Send a prep message
-		log.Println("New user registered", user.TGUsername)
+		slog.Info("New user registered", "username", user.TGUsername)
 		c.Send("Thanks ! I am now setting up your profile...")
 		return c.Send("Perfect! You are all setup")
 
@@ -114,7 +114,7 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 }
 
 func (h *Handler) handleTaskCompleted(c tg.Context) error {
-	log.Println("Task completed clicked")
+	slog.Info("Task completed clicked")
 	// mark streak
 	// send a positive message
 	// use c.respond //
@@ -122,7 +122,7 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 }
 
 func (h *Handler) handleTaskSkipped(c tg.Context) error {
-	log.Println("Task skipped clicked")
+	slog.Info("Task skipped clicked")
 	// send a supportive message
 	// use c.respond
 	return nil

@@ -4,7 +4,7 @@ import (
 	bot "agent-care-tg/bot"
 	"agent-care-tg/scheduler"
 	"agent-care-tg/storage"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -19,7 +19,8 @@ func main() {
 
 	token := os.Getenv("TG_BOT_TOKEN")
 	if token == "" {
-		log.Fatalf("[agent-care-tg]: TG_BOT_TOKEN is not set")
+		slog.Error("[agent-care-tg]: TG_BOT_TOKEN is not set")
+		os.Exit(1)
 	}
 
 	agentBot, err := tg.NewBot(tg.Settings{
@@ -27,7 +28,8 @@ func main() {
 		Poller: &tg.LongPoller{Timeout: 1 * time.Second},
 	})
 	if err != nil {
-		log.Fatalf("[agent-care-tg]: Failed to create bot: %v", err)
+		slog.Error("[agent-care-tg]: Failed to create bot", err)
+		os.Exit(1)
 	}
 
 	db := storage.Connect()
@@ -37,7 +39,7 @@ func main() {
 	handler.Register()
 	s := scheduler.New(store, agentBot)
 	s.Start()
-	log.Printf("[agent-care-tg]: Authorized on account %s, bot is online", agentBot.Me.Username)
+	slog.Info("[agent-care-tg]: Authorized on account %s, bot is online")
 	agentBot.Start()
 
 }
