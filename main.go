@@ -39,7 +39,8 @@ func main() {
 	handler.Register()
 	s := scheduler.New(store, agentBot)
 	s.Start()
-	slog.Info("[agent-care-tg]: Authorized on account %s, bot is online")
+	slog.Info("[agent-care-tg]: Authorized on account", agentBot.Me.Username)
+	slog.Info("[agent-care-tg]: Bot is online")
 	agentBot.Start()
 
 }
