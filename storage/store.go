@@ -2,7 +2,9 @@ package storage
 
 import (
 	"agent-care-tg/models"
+	"database/sql"
 	"github.com/jmoiron/sqlx"
+	"time"
 )
 
 type Store struct {
@@ -34,4 +36,14 @@ func (s *Store) GetAllUsers() ([]models.User, error) {
 		return nil, err
 	}
 	return users, nil
+}
+
+func (s *Store) UpdateLastSentAt(user *models.User) error {
+	lastSeenAt := sql.NullTime{Time: time.Now().UTC(), Valid: true}
+	chatId := user.ChatID
+	query := `UPDATE users SET last_sent_at = $1 WHERE chat_id = $2`
+
+	_, err := s.db.Exec(query, lastSeenAt, chatId)
+	return err
+
 }

@@ -20,7 +20,7 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
-
+      
       - name: Build Docker image
         run: docker build -t agent-care-bot .
 

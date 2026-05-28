@@ -3,12 +3,14 @@ package scheduler
 // ToDo : Add a logger for each cron job, type of message/reminder. number of users sent to, time, and error if any
 import (
 	bot "agent-care-tg/bot"
+	"agent-care-tg/models"
 	"agent-care-tg/storage"
 	"fmt"
+	"log/slog"
+	"time"
+
 	"github.com/robfig/cron/v3"
 	tg "gopkg.in/telebot.v3"
-	"log"
-	"time"
 )
 
 type Scheduler struct {
@@ -34,24 +36,15 @@ func (s *Scheduler) Start() {
 		s.checkInForExcercise(17)
 	})
 
-	s.cron.AddFunc("*/1 * * * *", func() {
-
-		s.test()
-	})
-
 	s.cron.Start()
-	log.Println("Scheduler Started...")
+	slog.Info("Scheduler started.")
 }
 
 func (s *Scheduler) Stop() {
-	s.cron.AddFunc("", func() {
-		log.Println("Scheduler Stopped...")
-	})
+	s.cron.Stop()
+	slog.Info("Scheduler stopped.")
 }
 
-func (s *Scheduler) test() {
-	s.sendMessageToAllUsers("test", "test message")
-}
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
 	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgMorningCheckIn)
 }
@@ -72,69 +65,65 @@ func (s *Scheduler) checkInForExcercise(localHour uint8) {
 	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgExcerciseCheckIn)
 }
 
-func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
-	// check if last_sent was within last 5 mins//
-
-	// timezone match//
-	users, err := s.store.GetAllUsers()
+func lastSentCheckPassed(user *models.User, hour uint8) bool {
+	loc, err := time.LoadLocation(user.Timezone)
 	if err != nil {
-		log.Println("Failed to access users from DB for sendMessageToAllUsersInTimeZone : ", err)
+		slog.Error("Failed to load location for lastSentCheckPassed", "error", err)
+		return false
+	}
+	localTime := time.Now().In(loc)
+
+	if !user.LastSentAt.Valid {
+		return true
+	}
+	if localTime.Hour() != int(hour) || localTime.Minute() > 10 {
+		return false
+	}
+
+	lastSentLocalTime := user.LastSentAt.Time.In(loc)
+
+	if lastSentLocalTime.Year() == localTime.Year() &&
+		lastSentLocalTime.Month() == localTime.Month() &&
+		lastSentLocalTime.Day() == localTime.Day() &&
+		lastSentLocalTime.Hour() == int(hour) &&
+		lastSentLocalTime.Minute() >= 10 {
+		slog.Warn("Double message check ", "username", user.TGUsername)
+		return false
+	}
+
+	return true
+}
+
+func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
+	users, err := s.store.GetAllUsers()
+
+	if err != nil {
+		slog.Error("Failed to access users from DB for sendMessageToAllUsersInTimeZone", "error", err)
 		return
 	}
 
 	for _, user := range users {
-		loc, err := time.LoadLocation(user.Timezone)
-		if err != nil {
-			log.Println("Failed to convert timezone from DB object : ", err)
+
+		if !lastSentCheckPassed(&user, hour) {
+			continue
 		}
 
-		localTime := time.Now().In(loc)
-
-		if localTime.Hour() == int(hour) && localTime.Minute() < 10 {
-			markup := &tg.ReplyMarkup{}
-			doneBtn := markup.Data("Done", "task_completed")
-			skippedBtn := markup.Data("Skipped", "task_skipped")
-			markup.Inline(markup.Row(doneBtn, skippedBtn))
-			formattedMsg := fmt.Sprintf(msg, user.Username)
-			_, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
-			if err != nil {
-				log.Println("Failed to send message to : ", user.TGUsername)
-			}
-		}
-	}
-	// write to last_sent
-}
-
-func (s *Scheduler) sendMessageToAllUsers(jobName string, msg string) error {
-	users, err := s.store.GetAllUsers()
-	if err != nil {
-		log.Println("Failed to access users from DB for : ", jobName)
-		log.Println("Erroe : ", err)
-		return err
-	}
-
-	for _, user := range users {
-		// ToDo: Make msg make context for yes or no response
-		//ToDo: Add a filtering system for message for safety
-		// Rendering buttons for each task with call back//
 		markup := &tg.ReplyMarkup{}
-		taskDoneBtnKey := jobName + "_task_completed"
-		taskSkippedBtnKey := jobName + "_task_skipped"
-		taskDoneBtn := markup.Data("Yes", taskDoneBtnKey)
-		taskSkippedBtn := markup.Data("Skipped", taskSkippedBtnKey)
-		markup.Inline(markup.Row(taskDoneBtn, taskSkippedBtn))
+		doneBtn := markup.Data("Done", "task_completed")
+		skippedBtn := markup.Data("Skipped", "task_skipped")
+		markup.Inline(markup.Row(doneBtn, skippedBtn))
+		formattedMsg := fmt.Sprintf(msg, user.Username)
 
-		_, err := s.bot.Send(tg.ChatID(user.ChatID), msg, markup)
-		// ToDo: handle partialfails for sending message
-		if err != nil {
-			log.Println("Failed to send users message for : ", jobName)
-			// ToDO: Clean up,this is here just for initial stage. Any sort personal info should needs to be removed post testing
-			log.Println("User : ", user.ChatID)
-			log.Println("Error : ", err)
-			// Continue to next user on error
-		} else {
-			log.Println("Successfully sent message to user ", user.ChatID, " for job : ", jobName)
+		if _, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown); err != nil {
+			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
+			continue
 		}
+
+		if err := s.store.UpdateLastSentAt(&user); err != nil {
+			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
+			continue
+		}
+
+		slog.Info("Updated last_sent_at timestampe for the user")
 	}
-	return nil
 }
