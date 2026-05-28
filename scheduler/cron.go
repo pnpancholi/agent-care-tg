@@ -5,7 +5,6 @@ import (
 	bot "agent-care-tg/bot"
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"time"
@@ -112,7 +111,12 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
 			if err != nil {
 				slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
 			} else {
-				user.LastSentAt = sql.NullTime{Time: time.Now().UTC(), Valid: true}
+				err := s.store.UpdateLastSentAt(&user)
+				if err != nil {
+					slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
+				} else {
+					slog.Info("Updated last_sent_at timestampe for the user")
+				}
 			}
 		}
 	}
