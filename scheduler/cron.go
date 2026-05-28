@@ -73,21 +73,24 @@ func lastSentCheckPassed(user *models.User, hour uint8) bool {
 	}
 	localTime := time.Now().In(loc)
 
-	if localTime.Hour() == int(hour) && localTime.Minute() <= 10 {
-		// Check for double message here//
-		if user.LastSentAt.Valid {
-			lastSentLocalTime := user.LastSentAt.Time.In(loc)
-
-			if lastSentLocalTime.Year() == localTime.Year() &&
-				lastSentLocalTime.Month() == localTime.Month() &&
-				lastSentLocalTime.Day() == localTime.Day() &&
-				lastSentLocalTime.Hour() == int(hour) &&
-				lastSentLocalTime.Minute() >= 10 {
-				slog.Warn("Double message check ", "username", user.TGUsername)
-				return false
-			}
-		}
+	if !user.LastSentAt.Valid {
+		return true
 	}
+	if localTime.Hour() != int(hour) || localTime.Minute() > 10 {
+		return false
+	}
+
+	lastSentLocalTime := user.LastSentAt.Time.In(loc)
+
+	if lastSentLocalTime.Year() == localTime.Year() &&
+		lastSentLocalTime.Month() == localTime.Month() &&
+		lastSentLocalTime.Day() == localTime.Day() &&
+		lastSentLocalTime.Hour() == int(hour) &&
+		lastSentLocalTime.Minute() >= 10 {
+		slog.Warn("Double message check ", "username", user.TGUsername)
+		return false
+	}
+
 	return true
 }
 
@@ -101,23 +104,26 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
 
 	for _, user := range users {
 
-		if lastSentCheckPassed(&user, hour) {
-			markup := &tg.ReplyMarkup{}
-			doneBtn := markup.Data("Done", "task_completed")
-			skippedBtn := markup.Data("Skipped", "task_skipped")
-			markup.Inline(markup.Row(doneBtn, skippedBtn))
-			formattedMsg := fmt.Sprintf(msg, user.Username)
-			_, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
-			if err != nil {
-				slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
-			} else {
-				err := s.store.UpdateLastSentAt(&user)
-				if err != nil {
-					slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
-				} else {
-					slog.Info("Updated last_sent_at timestampe for the user")
-				}
-			}
+		if !lastSentCheckPassed(&user, hour) {
+			continue
 		}
+
+		markup := &tg.ReplyMarkup{}
+		doneBtn := markup.Data("Done", "task_completed")
+		skippedBtn := markup.Data("Skipped", "task_skipped")
+		markup.Inline(markup.Row(doneBtn, skippedBtn))
+		formattedMsg := fmt.Sprintf(msg, user.Username)
+
+		if _, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown); err != nil {
+			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
+			continue
+		}
+
+		if err := s.store.UpdateLastSentAt(&user); err != nil {
+			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
+			continue
+		}
+
+		slog.Info("Updated last_sent_at timestampe for the user")
 	}
 }

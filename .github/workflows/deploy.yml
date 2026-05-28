@@ -20,7 +20,13 @@ jobs:
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v1
-
+      
+      - name: Grant IAP Permission
+        run: |
+          gcloud projects add-iam-policy-binding ${{ secrets.GCP_PROJECT_ID }} \
+            --member=serviceAccount:$(gcloud config get-value account) \
+            --role=roles/iap.tunnelResourceAccessor
+      
       - name: Build Docker image
         run: docker build -t agent-care-bot .
 
