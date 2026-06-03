@@ -115,6 +115,9 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 }
 
 func (h *Handler) handleTaskCompleted(c tg.Context) error {
+	// Gets rid of the button from the markup to avoid race condtion and bad operations.
+	c.Edit(c.Callback().Message.Text, &tg.ReplyMarkup{})
+
 	callBackData := strings.TrimSpace(c.Callback().Data)
 	taskTag := strings.Replace(callBackData, "_task_completed", "", 1)
 	chatID := c.Chat().ID
@@ -134,6 +137,9 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 }
 
 func (h *Handler) handleTaskSkipped(c tg.Context) error {
+	// Gets rid of the button from the markup to avoid race condtion and bad operations.
+	c.Edit(c.Callback().Message.Text, &tg.ReplyMarkup{})
+
 	callBackData := strings.TrimSpace(c.Callback().Data)
 	taskTag := strings.Replace(callBackData, "_task_skipped", "", 1)
 	chatID := c.Chat().ID
@@ -146,7 +152,6 @@ func (h *Handler) handleTaskSkipped(c tg.Context) error {
 		return fmt.Errorf("Failed to reset streak: %w", err)
 	}
 	c.Send("Its Okay")
-	slog.Info("Task skipped clicked", "data", c)
 	c.Respond()
 	return nil
 }
