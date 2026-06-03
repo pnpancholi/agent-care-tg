@@ -18,6 +18,7 @@ type Task struct {
 	ChatID        int64  `json:"chat_id" db:"chat_id"`
 	Name          string `json:"name" db:"name"`
 	Description   string `json:"description" db:"description"`
+	Tag           string `json:"tag" db:"tag"`
 	IsActive      bool   `json:"is_active" db:"is_active"`
 	IsDefault     bool   `json:"is_default" db:"is_default"`
 	CurrentStreak uint64 `json:"current_streak" db:"current_streak"`

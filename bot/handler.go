@@ -3,6 +3,7 @@ package bot
 import (
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
+	"fmt"
 	"log/slog"
 	"strings"
 
@@ -114,15 +115,26 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 }
 
 func (h *Handler) handleTaskCompleted(c tg.Context) error {
-	slog.Info("Task completed clicked")
-	// mark streak
-	// send a positive message
-	// use c.respond //
+	callBackData := strings.TrimSpace(c.Callback().Data)
+	taskTag := strings.Replace(callBackData, "_task_completed", "", 1)
+	chatID := c.Chat().ID
+
+	err := h.store.IncrementStreak(chatID, taskTag)
+
+	if err != nil {
+		slog.Error("Failed to update streak", "err", err)
+		c.Send("Oops, something went wong. We couldn't update your streak")
+		c.Respond()
+		return fmt.Errorf("Failed to update streak: %w", err)
+	}
+	c.Send("Great job, keep it up!")
+	slog.Info("Task completed clicked", "data", taskTag)
+	c.Respond()
 	return nil
 }
 
 func (h *Handler) handleTaskSkipped(c tg.Context) error {
-	slog.Info("Task skipped clicked")
+	slog.Info("Task skipped clicked", "data", c)
 	// send a supportive message
 	// use c.respond
 	return nil

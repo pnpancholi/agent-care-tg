@@ -19,6 +19,14 @@ type Scheduler struct {
 	bot   *tg.Bot
 }
 
+const (
+	MorningTag      = "daily_morning"
+	SunlightTag     = "daily_sunlight"
+	ExcercoseTag    = "daily_excercise"
+	PersonalGoalTag = "daily_personal"
+	HealthyMealTag  = "daily_meal"
+)
+
 func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 	return &Scheduler{
 		cron:  cron.New(),
@@ -28,6 +36,9 @@ func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
+	s.cron.AddFunc("*/2 * * * *", func() {
+		s.testMessage()
+	})
 	s.cron.AddFunc("*/10 * * * *", func() {
 		s.sendMorningMessage(7)
 		s.checkInForSunlight(14)
@@ -45,24 +56,56 @@ func (s *Scheduler) Stop() {
 	slog.Info("Scheduler stopped.")
 }
 
+func (s *Scheduler) testMessage() {
+	taskTag := "daily_morning"
+	msg := "Test message for"
+	users, err := s.store.GetAllUsers()
+
+	if err != nil {
+		slog.Error("Failed to access users from DB for sendMessageToAllUsersInTimeZone", "error", err)
+		return
+	}
+
+	for _, user := range users {
+
+		markup := &tg.ReplyMarkup{}
+		doneBtn := markup.Data("Done", taskTag+"_task_completed")
+		skippedBtn := markup.Data("Skipped", taskTag+"_task_skipped")
+		markup.Inline(markup.Row(doneBtn, skippedBtn))
+		formattedMsg := fmt.Sprintf(msg, user.Username)
+
+		if _, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown); err != nil {
+			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
+			continue
+		}
+
+		if err := s.store.UpdateLastSentAt(&user); err != nil {
+			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
+			continue
+		}
+
+		slog.Info("Updated last_sent_at timestampe for the user")
+	}
+
+}
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgMorningCheckIn)
+	s.sendMessageToAllUsersInTimeZone(localHour, MorningTag, bot.MsgMorningCheckIn)
 }
 
 func (s *Scheduler) checkInForSunlight(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgSunlightCheckIn)
+	s.sendMessageToAllUsersInTimeZone(localHour, SunlightTag, bot.MsgSunlightCheckIn)
 }
 
 func (s *Scheduler) checkInForHealthyMeal(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgMealCheckIn)
+	s.sendMessageToAllUsersInTimeZone(localHour, HealthyMealTag, bot.MsgMealCheckIn)
 }
 
 func (s *Scheduler) checkInForPersonalGoal(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgPersonalGoalCheckIn)
+	s.sendMessageToAllUsersInTimeZone(localHour, PersonalGoalTag, bot.MsgPersonalGoalCheckIn)
 }
 
 func (s *Scheduler) checkInForExcercise(localHour uint8) {
-	s.sendMessageToAllUsersInTimeZone(localHour, bot.MsgExcerciseCheckIn)
+	s.sendMessageToAllUsersInTimeZone(localHour, ExcercoseTag, bot.MsgExcerciseCheckIn)
 }
 
 func lastSentCheckPassed(user *models.User, hour uint8) bool {
@@ -94,7 +137,7 @@ func lastSentCheckPassed(user *models.User, hour uint8) bool {
 	return true
 }
 
-func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
+func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, taskTag string, msg string) {
 	users, err := s.store.GetAllUsers()
 
 	if err != nil {
@@ -109,8 +152,8 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, msg string) {
 		}
 
 		markup := &tg.ReplyMarkup{}
-		doneBtn := markup.Data("Done", "task_completed")
-		skippedBtn := markup.Data("Skipped", "task_skipped")
+		doneBtn := markup.Data("Done", taskTag+"_task_completed")
+		skippedBtn := markup.Data("Skipped", taskTag+"_task_skipped")
 		markup.Inline(markup.Row(doneBtn, skippedBtn))
 		formattedMsg := fmt.Sprintf(msg, user.Username)
 

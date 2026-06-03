@@ -17,6 +17,16 @@ type Store struct {
 func NewStore(db *sqlx.DB) *Store {
 	return &Store{db: db}
 }
+func (s *Store) IncrementStreak(chatID int64, taskTag string) error {
+	query := `UPDATE tasks SET current_streak = current_streak + 1 WHERE chat_id = $1 AND tag = $2`
+	_, err := s.db.Exec(query, chatID, taskTag)
+
+	if err != nil {
+		slog.Error("Failed to update user's streak", "err", err)
+		return fmt.Errorf("Failed to update user's streak: %w", err)
+	}
+	return nil
+}
 
 func (s *Store) GenerateDefaultTasks(userID int64) error {
 	tx, err := s.db.Beginx()
@@ -27,14 +37,14 @@ func (s *Store) GenerateDefaultTasks(userID int64) error {
 
 	defer tx.Rollback()
 
-	query := `INSERT INTO tasks (chat_id, name, description, is_active, is_default, current_streak, max_streak) VALUES (:chat_id, :name, :description, :is_active, :is_default, :current_streak, :max_streak)`
+	query := `INSERT INTO tasks (chat_id, name, description, tag, is_active, is_default, current_streak, max_streak) VALUES (:chat_id, :name, :description, :tag, :is_active, :is_default, :current_streak, :max_streak)`
 
 	defaultTasks := []models.Task{
-		{ChatID: userID, Name: "Morning Routine", Description: "Morning Routine", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Sunlight", Description: "Sunlight Routine", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Workout", Description: "Workout", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Healthy Meal", Description: "Healthy Meal", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Personal Goal", Description: "Personal Goal", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Morning Routine", Description: "Morning Routine", Tag: "daily_morning", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Sunlight", Description: "Sunlight Routine", Tag: "daily_sunlight", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Workout", Description: "Workout", Tag: "daily_excercise", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Healthy Meal", Description: "Healthy Meal", Tag: "daily_meal", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Personal Goal", Description: "Personal Goal", Tag: "daily_personal", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
 	}
 
 	for _, task := range defaultTasks {
