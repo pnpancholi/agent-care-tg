@@ -3,6 +3,7 @@ package storage
 import (
 	"agent-care-tg/models"
 	"database/sql"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -21,13 +22,14 @@ func (s *Store) GenerateDefaultTasks(userID int64) error {
 	tx, err := s.db.Beginx()
 	if err != nil {
 		slog.Error("[GenerateDefaultTasks]: Failed to begin transaction", "error", err)
+		return fmt.Errorf("Failed to begin transaction: %w", err)
 	}
 
 	defer tx.Rollback()
 
-	query := `INSERT INTO tasks (chat_id, name, description, isActive, isDefault, currentStreak, maxStreak) VALUES (:chat_id, :name, :description, :isActive, :isDefault, :currentStreak, :maxStreak)`
+	query := `INSERT INTO tasks (chat_id, name, description, is_active, is_default, current_streak, max_streak) VALUES (:chat_id, :name, :description, :is_active, :is_default, :current_streak, :max_streak)`
 
-	defaultTaks := []models.Task{
+	defaultTasks := []models.Task{
 		{ChatID: userID, Name: "Morning Routine", Description: "Morning Routine", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
 		{ChatID: userID, Name: "Sunlight", Description: "Sunlight Routine", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
 		{ChatID: userID, Name: "Workout", Description: "Workout", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
@@ -35,32 +37,41 @@ func (s *Store) GenerateDefaultTasks(userID int64) error {
 		{ChatID: userID, Name: "Personal Goal", Description: "Personal Goal", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
 	}
 
-	for _, task := range defaultTaks {
+	for _, task := range defaultTasks {
 		_, err := tx.NamedExec(query, task)
 		if err != nil {
 			slog.Error("[GenerateDefaultTasks]: Failed to execute query", "error", err)
+			return fmt.Errorf("Failed to execute query: %w", err)
 		}
 	}
-	return tx.Commit()
+
+	err = tx.Commit()
+	if err != nil {
+		slog.Error("[GenerateDefaultTasks]: Failed to commit transaction", "error", err)
+		return fmt.Errorf("Failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 func (s *Store) SaveUser(user *models.User) error {
 	query := `
-		INSERT INTO users (chat_id, tg_username, username, personal_goal, timezone, tasks)
-	VALUES (:chat_id, :tg_username, :username, :personal_goal, :timezone, :tasks)
+		INSERT INTO users (chat_id, tg_username, username, personal_goal, timezone)
+	VALUES (:chat_id, :tg_username, :username, :personal_goal, :timezone )
 	`
 
 	_, err := s.db.NamedExec(query, user)
 	if err != nil {
 		slog.Error("[SaveUser]: Failed to save user", "error", err)
+		return fmt.Errorf("Failed to save user: %w", err)
 	}
 
-	error := s.GenerateDefaultTasks(user.ChatID)
-	if error != nil {
+	err = s.GenerateDefaultTasks(user.ChatID)
+	if err != nil {
 		slog.Error("[SaveUser]: Failed to generate default tasks", "error", err)
+		return fmt.Errorf("Failed to generate default tasks: %w", err)
 	}
 
-	return err
+	return nil
 }
 
 func (s *Store) GetAllUsers() ([]models.User, error) {

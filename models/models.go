@@ -16,12 +16,12 @@ type Task struct {
 	ID int64 `json:"id" db:"id"`
 	// this is the chat_id of the user, to maintain one to many relationship
 	ChatID        int64  `json:"chat_id" db:"chat_id"`
-	Name          string `json:"name"`
-	Description   string `json:"description"`
-	IsActive      bool   `json:"is_active"`
-	IsDefault     bool   `json:"is_default"`
-	CurrentStreak uint64 `json:"current_streak"`
-	MaxStreak     uint64 `json:"max_streak"`
+	Name          string `json:"name" db:"name"`
+	Description   string `json:"description" db:"description"`
+	IsActive      bool   `json:"is_active" db:"is_active"`
+	IsDefault     bool   `json:"is_default" db:"is_default"`
+	CurrentStreak uint64 `json:"current_streak" db:"current_streak"`
+	MaxStreak     uint64 `json:"max_streak" db:"max_streak"`
 }
 
 func NewUser() *User {
