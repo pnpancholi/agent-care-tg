@@ -17,6 +17,18 @@ type Store struct {
 func NewStore(db *sqlx.DB) *Store {
 	return &Store{db: db}
 }
+
+func (s *Store) ResetStreak(chatID int64, taskTag string) error {
+	query := `UPDATE tasks SET current_streak = 0 WHERE chat_id = $1 AND tag = $2`
+	_, err := s.db.Exec(query, chatID, taskTag)
+
+	if err != nil {
+		slog.Error("Failed to reset streak", "err", err)
+		return fmt.Errorf("Failed to reset streak : %w", err)
+	}
+	return nil
+}
+
 func (s *Store) IncrementStreak(chatID int64, taskTag string) error {
 	query := `UPDATE tasks SET current_streak = current_streak + 1 WHERE chat_id = $1 AND tag = $2`
 	_, err := s.db.Exec(query, chatID, taskTag)

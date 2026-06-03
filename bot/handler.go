@@ -134,8 +134,19 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 }
 
 func (h *Handler) handleTaskSkipped(c tg.Context) error {
+	callBackData := strings.TrimSpace(c.Callback().Data)
+	taskTag := strings.Replace(callBackData, "_task_skipped", "", 1)
+	chatID := c.Chat().ID
+
+	err := h.store.ResetStreak(chatID, taskTag)
+	if err != nil {
+		slog.Error("Failed to reset streak", "err", err)
+		c.Send("Oops, something went wong.")
+		c.Respond()
+		return fmt.Errorf("Failed to reset streak: %w", err)
+	}
+	c.Send("Its Okay")
 	slog.Info("Task skipped clicked", "data", c)
-	// send a supportive message
-	// use c.respond
+	c.Respond()
 	return nil
 }
