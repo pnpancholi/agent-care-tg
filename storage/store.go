@@ -118,3 +118,35 @@ func (s *Store) UpdateLastSentAt(user *models.User) error {
 	return err
 
 }
+
+func (s *Store) GetTask(chatID int64, taskTag string) (models.Task, error) {
+	var task models.Task
+	query := `SELECT * FROM tasks WHERE chat_id = $1 AND tag = $2`
+	err := s.db.Get(&task, query, chatID, taskTag)
+
+	if err != nil {
+		return task, err
+	}
+	return task, nil
+}
+
+func (s *Store) UpdateMaxStreak(taskID int64, newStreak int64) error {
+	slog.Info("here")
+	query := `UPDATE tasks SET max_streak = $1 WHERE id = $2`
+
+	res, err := s.db.Exec(query, newStreak, taskID)
+
+	if err != nil {
+		slog.Error("Failed to update max streak", "error", err)
+		return fmt.Errorf("Failed to update max streak: %w", err)
+	}
+
+	rows, _ := res.RowsAffected()
+
+	if rows != 1 {
+		slog.Error("Failed to update max streak", "error", err)
+		return fmt.Errorf("Failed to update max streak: %w", err)
+	}
+
+	return nil
+}

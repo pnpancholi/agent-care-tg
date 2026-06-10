@@ -42,7 +42,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("*/10 * * * *", func() {
 		s.sendMorningMessage(7)
 		s.checkInForSunlight(14)
-		s.checkInForHealthyMeal(14)
+		s.checkInForHealthyMeal(20)
 		s.checkInForPersonalGoal(21)
 		s.checkInForExcercise(17)
 	})
