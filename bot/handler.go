@@ -123,13 +123,21 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 	chatID := c.Chat().ID
 
 	err := h.store.IncrementStreak(chatID, taskTag)
-
 	if err != nil {
 		slog.Error("Failed to update streak", "err", err)
 		c.Send("Oops, something went wong. We couldn't update your streak")
 		c.Respond()
 		return fmt.Errorf("Failed to update streak: %w", err)
 	}
+
+	err = h.handleMaxStreak(chatID, taskTag)
+	if err != nil {
+		slog.Error("Failed to update max streak", "err", err)
+		c.Send("Oops, something went wong. We couldn't update your max streak")
+		c.Respond()
+		return fmt.Errorf("Failed to update max streak: %w", err)
+	}
+
 	c.Send("Great job, keep it up!")
 	slog.Info("Task completed clicked", "data", taskTag)
 	c.Respond()
@@ -153,5 +161,29 @@ func (h *Handler) handleTaskSkipped(c tg.Context) error {
 	}
 	c.Send("Its Okay")
 	c.Respond()
+	return nil
+}
+
+func (h *Handler) handleMaxStreak(chatID int64, taskTag string) error {
+	task, err := h.store.GetTask(chatID, taskTag)
+
+	if err != nil {
+		slog.Error("Failed to get user data", "error", err)
+		return fmt.Errorf("Failed to get user data: %w", err)
+	}
+
+	maxStreak := task.MaxStreak
+	slog.Info("max streak", "maxStreak", maxStreak)
+
+	if task.MaxStreak > task.CurrentStreak {
+		slog.Info("ffff")
+		return nil
+	}
+
+	err = h.store.UpdateMaxStreak(task.ID, int64(task.CurrentStreak))
+	if err != nil {
+		slog.Error("Failed to update max streak", "error", err)
+		return fmt.Errorf("Failed to update max streak %w", err)
+	}
 	return nil
 }

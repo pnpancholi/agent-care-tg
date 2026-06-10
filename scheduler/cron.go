@@ -27,6 +27,8 @@ const (
 	HealthyMealTag  = "daily_meal"
 )
 
+const EXPIRATION_TIME = 2
+
 func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 	return &Scheduler{
 		cron:  cron.New(),
@@ -42,7 +44,7 @@ func (s *Scheduler) Start() {
 	s.cron.AddFunc("*/10 * * * *", func() {
 		s.sendMorningMessage(7)
 		s.checkInForSunlight(14)
-		s.checkInForHealthyMeal(14)
+		s.checkInForHealthyMeal(20)
 		s.checkInForPersonalGoal(21)
 		s.checkInForExcercise(17)
 	})
@@ -74,7 +76,10 @@ func (s *Scheduler) testMessage() {
 		markup.Inline(markup.Row(doneBtn, skippedBtn))
 		formattedMsg := fmt.Sprintf(msg, user.Username)
 
-		if _, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown); err != nil {
+		msg, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
+		s.scheduleExpiry(msg)
+
+		if err != nil {
 			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
 			continue
 		}
@@ -157,10 +162,14 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, taskTag string, 
 		markup.Inline(markup.Row(doneBtn, skippedBtn))
 		formattedMsg := fmt.Sprintf(msg, user.Username)
 
-		if _, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown); err != nil {
+		msg, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
+
+		if err != nil {
 			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
 			continue
 		}
+
+		s.scheduleExpiry(msg)
 
 		if err := s.store.UpdateLastSentAt(&user); err != nil {
 			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
@@ -169,4 +178,15 @@ func (s *Scheduler) sendMessageToAllUsersInTimeZone(hour uint8, taskTag string, 
 
 		slog.Info("Updated last_sent_at timestampe for the user")
 	}
+}
+
+func (s *Scheduler) scheduleExpiry(msg *tg.Message) {
+	go func() {
+		time.Sleep(EXPIRATION_TIME * time.Minute)
+
+		_, err := s.bot.Edit(msg, msg.Text, &tg.ReplyMarkup{})
+		if err != nil {
+			slog.Info("expiry worked")
+		}
+	}()
 }
