@@ -48,7 +48,7 @@ func (h *Handler) handleStart(c tg.Context) error {
 
 	// 2. Send data collection message and close keyboard
 	removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
-	c.Send(MsgDataCollection, removeKeyboard, tg.ModeMarkdown)
+	c.Send(MsgDataCollection, tg.ModeMarkdown, removeKeyboard)
 
 	// 3. Present button for how it works
 	markup := &tg.ReplyMarkup{ResizeKeyboard: true}
@@ -61,13 +61,14 @@ func (h *Handler) handleLearnHowItWorks(c tg.Context) error {
 	markup := &tg.ReplyMarkup{ResizeKeyboard: true}
 	btnGetStarted := markup.Text("Get Started")
 	markup.Reply(markup.Row(btnGetStarted))
-	return c.Send(MsgHowItWorks, markup)
+	return c.Send(MsgHowItWorks, markup, tg.ModeMarkdown)
 }
 
 func (h *Handler) handleGetStarted(c tg.Context) error {
 	h.userData[c.Chat().ID] = models.NewUser()
 	h.state[c.Chat().ID] = "waiting_for_name"
-	return c.Send("What should I call you?")
+	removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
+	return c.Send("What should I call you?", removeKeyboard)
 }
 
 func (h *Handler) handleUserRegistration(c tg.Context) error {
@@ -100,14 +101,15 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		user.TGUsername = c.Sender().Username
 		user.Timezone = timezone
 
+		removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
+
 		if err := h.store.SaveUser(user); err != nil {
 			slog.Error("Failed to save user", "error", err)
-			return c.Send("Something went wrong with your profile. Please try again later")
+			return c.Send("Something went wrong with your profile. Please try again later", removeKeyboard)
 		}
-		// ToDo: Get rid of buttons
 		//ToDo: Send a prep message
 		slog.Info("New user registered", "username", user.TGUsername)
-		c.Send("Thanks ! I am now setting up your profile...")
+		c.Send("Thanks ! I am now setting up your profile...", removeKeyboard)
 		return c.Send("Perfect! You are all setup")
 
 	}
