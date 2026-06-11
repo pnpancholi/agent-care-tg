@@ -104,6 +104,9 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
 
 		if err := h.store.SaveUser(user); err != nil {
+			if strings.Contains(err.Error(), "duplicate key") {
+				return c.Send("You are already registered", removeKeyboard)
+			}
 			slog.Error("Failed to save user", "error", err)
 			return c.Send("Something went wrong with your profile. Please try again later", removeKeyboard)
 		}
