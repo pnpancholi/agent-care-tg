@@ -24,6 +24,7 @@ func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 
 func (h *Handler) Register() {
 	h.bot.Handle("/start", h.handleStart)
+	h.bot.Handle("/profile", h.handleProfile)
 	h.bot.Handle("Learn how it works", h.handleLearnHowItWorks)
 	h.bot.Handle("Get Started", h.handleGetStarted)
 	// This handles all the answers and their respective responses in user regiastration//
@@ -190,5 +191,20 @@ func (h *Handler) handleMaxStreak(chatID int64, taskTag string) error {
 		slog.Error("Failed to update max streak", "error", err)
 		return fmt.Errorf("Failed to update max streak %w", err)
 	}
+	return nil
+}
+
+func (h *Handler) handleProfile(c tg.Context) error {
+	chatID := c.Chat().ID
+
+	user, err := h.store.GetUserByChatID(chatID)
+
+	if err != nil {
+		slog.Warn("Can not get user data for profile", "warning", err)
+		c.Send("Sorry, cant find ur profile, are u sure u are registered")
+	}
+
+	slog.Info("profile", "user", user)
+	c.Send("profile")
 	return nil
 }

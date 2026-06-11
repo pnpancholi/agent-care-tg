@@ -119,6 +119,17 @@ func (s *Store) UpdateLastSentAt(user *models.User) error {
 
 }
 
+func (s *Store) GetUserByChatID(chatID int64) (models.User, error) {
+	var user models.User
+	query := `SELECT * from users WHERE chat_id = $1`
+
+	err := s.db.Get(&user, query, chatID)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
 func (s *Store) GetTask(chatID int64, taskTag string) (models.Task, error) {
 	var task models.Task
 	query := `SELECT * FROM tasks WHERE chat_id = $1 AND tag = $2`
