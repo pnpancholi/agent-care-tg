@@ -4,10 +4,9 @@ import (
 	"agent-care-tg/models"
 	"database/sql"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"log/slog"
 	"time"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type Store struct {
@@ -128,6 +127,19 @@ func (s *Store) GetUserByChatID(chatID int64) (models.User, error) {
 		return user, err
 	}
 	return user, nil
+}
+
+func (s *Store) GetAllTasksForUserByChatID(chatID int64) ([]models.Task, error) {
+	var tasks []models.Task
+
+	query := `SELECT * FROM tasks WHERE chat_id = $1`
+	err := s.db.Select(&tasks, query, chatID)
+
+	if err != nil {
+		return tasks, err
+	}
+	slog.Info("tasks", "tasks", tasks)
+	return tasks, nil
 }
 
 func (s *Store) GetTask(chatID int64, taskTag string) (models.Task, error) {

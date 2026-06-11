@@ -25,6 +25,7 @@ func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 func (h *Handler) Register() {
 	h.bot.Handle("/start", h.handleStart)
 	h.bot.Handle("/profile", h.handleProfile)
+	h.bot.Handle("/streak", h.handleStreak)
 	h.bot.Handle("Learn how it works", h.handleLearnHowItWorks)
 	h.bot.Handle("Get Started", h.handleGetStarted)
 	// This handles all the answers and their respective responses in user regiastration//
@@ -206,5 +207,21 @@ func (h *Handler) handleProfile(c tg.Context) error {
 
 	slog.Info("profile", "user", user)
 	c.Send("profile")
+	return nil
+}
+
+func (h *Handler) handleStreak(c tg.Context) error {
+	chatID := c.Chat().ID
+
+	tasks, err := h.store.GetAllTasksForUserByChatID(chatID)
+
+	if err != nil {
+		slog.Error("Can not get all the tasks for the give user", "error", err)
+		c.Send("Sorry, cant find ur profile, are u sure u are registered")
+	}
+
+	slog.Info("streak", "tasks", tasks)
+	c.Send("streak")
+
 	return nil
 }
