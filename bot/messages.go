@@ -80,5 +80,6 @@ Did you work on your personal goal today?`
 
 *Name:* %s
 *Goal:* %s
-*Timezone:* %s 🌍`
+*Timezone:* %s 🌍
+*Joined:* %s`
 )

@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"time"
 )
 
 type User struct {
@@ -11,6 +12,7 @@ type User struct {
 	Timezone     string       `json:"timezone" db:"timezone"`
 	PersonalGoal string       `json:"personal_goal" db:"personal_goal"`
 	LastSentAt   sql.NullTime `json:"last_sent_at" db:"last_sent_at"`
+	JoinedAt     time.Time    `json:"joined_at" db:"joined_at"`
 }
 type Task struct {
 	ID int64 `json:"id" db:"id"`
@@ -26,5 +28,7 @@ type Task struct {
 }
 
 func NewUser() *User {
-	return &User{}
+	return &User{
+		JoinedAt: time.Now(), // Initialize JoinedAt with the current time
+	}
 }

@@ -208,7 +208,8 @@ func (h *Handler) handleProfile(c tg.Context) error {
 	userName := user.Username
 	userGoal := user.PersonalGoal
 	userTimezone := user.Timezone
-	formattedMsg := fmt.Sprintf(MsgProfileData, userName, userGoal, userTimezone)
+	userJoinedAtFormatted := user.JoinedAt.Format("Jan 02, 2006") // Format JoinedAt
+	formattedMsg := fmt.Sprintf(MsgProfileData, userName, userGoal, userTimezone, userJoinedAtFormatted)
 	c.Send(formattedMsg, tg.ModeMarkdown)
 	return nil
 }
