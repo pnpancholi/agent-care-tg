@@ -154,7 +154,6 @@ func (s *Store) GetTask(chatID int64, taskTag string) (models.Task, error) {
 }
 
 func (s *Store) UpdateMaxStreak(taskID int64, newStreak int64) error {
-	slog.Info("here")
 	query := `UPDATE tasks SET max_streak = $1 WHERE id = $2`
 
 	res, err := s.db.Exec(query, newStreak, taskID)

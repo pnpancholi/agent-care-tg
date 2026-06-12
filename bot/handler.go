@@ -202,11 +202,14 @@ func (h *Handler) handleProfile(c tg.Context) error {
 
 	if err != nil {
 		slog.Warn("Can not get user data for profile", "warning", err)
-		c.Send("Sorry, cant find ur profile, are u sure u are registered")
+		return c.Send("Sorry, cant find ur profile, are u sure u are registered")
 	}
 
-	slog.Info("profile", "user", user)
-	c.Send("profile")
+	userName := user.Username
+	userGoal := user.PersonalGoal
+	userTimezone := user.Timezone
+	formattedMsg := fmt.Sprintf(MsgProfileData, userName, userGoal, userTimezone)
+	c.Send(formattedMsg, tg.ModeMarkdown)
 	return nil
 }
 
