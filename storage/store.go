@@ -138,7 +138,6 @@ func (s *Store) GetAllTasksForUserByChatID(chatID int64) ([]models.Task, error) 
 	if err != nil {
 		return tasks, err
 	}
-	slog.Info("tasks", "tasks", tasks)
 	return tasks, nil
 }
 

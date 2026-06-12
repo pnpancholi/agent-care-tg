@@ -214,6 +214,7 @@ func (h *Handler) handleProfile(c tg.Context) error {
 	return nil
 }
 
+// ToDo: Refactor the string builder to be its own util function//
 func (h *Handler) handleStreak(c tg.Context) error {
 	chatID := c.Chat().ID
 
@@ -221,11 +222,50 @@ func (h *Handler) handleStreak(c tg.Context) error {
 
 	if err != nil {
 		slog.Error("Can not get all the tasks for the give user", "error", err)
-		c.Send("Sorry, cant find ur profile, are u sure u are registered")
+		// Assuming this message implies registration issue, similar to handleProfile
+		return c.Send("Sorry, cant find your streak data. Are you sure you are registered and have tasks?")
 	}
 
-	slog.Info("streak", "tasks", tasks)
-	c.Send("streak")
+	var messageBuilder strings.Builder
+	messageBuilder.WriteString(MsgStreaksHeader)
 
-	return nil
+	if len(tasks) == 0 {
+		messageBuilder.WriteString("\n\nYou don't have any active tasks yet!\nStart by setting some goals.")
+	} else {
+		for _, task := range tasks {
+			// Only display active tasks for streaks
+			if task.IsActive {
+				// Determine task-specific emoji
+				// Normalize task tag for consistent matching
+				normalizedTag := strings.ToLower(strings.ReplaceAll(task.Tag, " ", "_"))
+				slog.Info("Debugging normalized tag", "normalized_tag", normalizedTag)
+				taskEmoji := "✅" // Default emoji
+				switch normalizedTag {
+				case "daily_morning":
+					taskEmoji = "⏰"
+				case "daily_sunlight":
+					taskEmoji = "☀️"
+				case "daily_excercise":
+					taskEmoji = "💪"
+				case "daily_meal":
+					taskEmoji = "🥗"
+				case "daily_personal":
+					taskEmoji = "📔" // Journal emoji for personal goal
+				}
+
+				currentStreakEmoji := "⚡️"
+				if task.CurrentStreak == 0 {
+					currentStreakEmoji = "🥶"
+				}
+				formattedTask := fmt.Sprintf(MsgTaskStreak, taskEmoji, task.Name, task.CurrentStreak, currentStreakEmoji, task.MaxStreak)
+				messageBuilder.WriteString(formattedTask)
+			}
+		}
+		// If no active tasks were found, add a specific message
+		if messageBuilder.Len() == len(MsgStreaksHeader) {
+			messageBuilder.WriteString("\n\nYou don't have any active tasks to track streaks for.\nConsider enabling some tasks!")
+		}
+	}
+
+	return c.Send(messageBuilder.String(), tg.ModeMarkdown)
 }

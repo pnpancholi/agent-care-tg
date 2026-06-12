@@ -82,4 +82,13 @@ Did you work on your personal goal today?`
 *Goal:* %s
 *Timezone:* %s 🌍
 *Joined:* %s`
+
+	MsgStreaksHeader = `
+✨ *Your Streaks Overview* ✨
+---------------------------------------`
+	MsgTaskStreak    = `
+*%s %s*
+  _Current:_ %d days %s
+  _Best:_ %d days 🏆
+---------------------------------------`
 )
