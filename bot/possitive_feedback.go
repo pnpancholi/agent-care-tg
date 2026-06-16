@@ -1,7 +1,25 @@
 package bot
 
-// Daily_Morning is a collection of inspiring messages for starting the day right.
-var Daily_Morning = []string{
+var feedbackMap = map[string][]string{
+	"daily_morning":   dailyMorning,
+	"daily_sunlight":  dailySunlight,
+	"daily_excercise": dailyExercise,
+	"daily_meal":      dailyMeal,
+	"daily_personal":  dailyPersonal,
+}
+
+func GetFeedbackMessage(taskTag string) string {
+	index := 0
+
+	messages, ok := feedbackMap[taskTag]
+	if !ok || len(messages) == 0 {
+		return "Great Job, another win in the books!"
+	}
+
+	return messages[index]
+}
+
+var dailyMorning = []string{
 	"Routine complete. You’ve already won the first battle of the day, and that momentum is going to carry you through everything else.",
 	"That’s one successful morning in the books. You didn’t just wake up; you showed up for yourself, and that makes all the difference.",
 	"The hard part is over. You’ve set the tone for the rest of your day by choosing discipline over comfort before the world even started.",
@@ -29,8 +47,7 @@ var Daily_Morning = []string{
 	"Routine finished. You’ve started your day with intention and action. That’s a powerful combination that’s going to make today great.",
 }
 
-// Daily_Sunlight is a collection of friendly messages encouraging sunlight exposure and movement.
-var Daily_Sunlight = []string{
+var dailySunlight = []string{
 	"Sunlight exposure complete. You’ve just given your circadian rhythm the signal it needs to keep your energy and mood stable all day.",
 	"Great job getting outside. That blast of fresh air and natural light is one of the simplest, most effective ways to reset your focus.",
 	"Habit finished. You’ve stepped out of the bubble and reconnected with the world, and your brain is going to thank you for the clarity.",
@@ -58,8 +75,7 @@ var Daily_Sunlight = []string{
 	"You’ve officially conquered the outdoor habit. That combination of light and air is the ultimate recipe for a clear head and a steady mood.",
 }
 
-// Daily_Exercise is a collection of friendly messages encouraging physical activity and well-being.
-var Daily_Exercise = []string{
+var dailyExercise = []string{
 	"Workout complete. You’ve just given your body the movement it needs to stay strong, and your brain is going to love the endorphin rush.",
 	"Great job finishing your exercise. You pushed through the resistance and chose growth, and that discipline is going to serve you all day.",
 	"Habit finished. You’ve officially invested in your future health and current energy levels. That’s a massive win for your well-being.",
@@ -87,8 +103,7 @@ var Daily_Exercise = []string{
 	"You’ve officially conquered your daily movement. That combination of effort and consistency is the fastest way to reach your goals.",
 }
 
-// Daily_Meal is a collection of friendly messages encouraging healthy eating and mindful nourishment.
-var Daily_Meal = []string{
+var dailyMeal = []string{
 	"Meal complete. You’ve just given your body the high-quality fuel it needs to keep your energy stable and your mind sharp.",
 	"Great job choosing a healthy meal. You’ve prioritized your long-term well-being over a quick craving, and that discipline is a huge win.",
 	"Habit finished. You’ve successfully nourished your system with the right nutrients, and you’re going to feel the benefit in your focus all afternoon.",
@@ -116,8 +131,7 @@ var Daily_Meal = []string{
 	"You’ve officially conquered your daily nutrition. That combination of quality and intention is the fastest way to feel your absolute best.",
 }
 
-// Daily_Goal is a collection of friendly messages encouraging goal setting and achievement.
-var Daily_Personal = []string{
+var dailyPersonal = []string{
 	"Goal complete. You’ve just proven to yourself that your focus is stronger than your distractions, and that’s a massive win.",
 	"Great job finishing your personal objective. You set a target and hit it, and that kind of follow-through is exactly how big dreams become reality.",
 	"Habit finished. You’ve successfully moved the needle on what matters most to you, and that progress is going to fuel your next big win.",

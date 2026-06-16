@@ -146,8 +146,8 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 		return fmt.Errorf("Failed to update max streak: %w", err)
 	}
 
-	taskTagClean := strings.ReplaceAll(strings.Title(strings.ReplaceAll("daily_morning", "_", " ")), " ", "_")
-	c.Send("Great job, keep it up!")
+	feedbackMsg := GetFeedbackMessage(taskTag)
+	c.Send(feedbackMsg)
 	slog.Info("Task completed clicked", "data", taskTag)
 	c.Respond()
 	return nil
