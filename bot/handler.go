@@ -17,8 +17,6 @@ type Handler struct {
 	store    *storage.Store
 }
 
-var feedbackIndex = 0
-
 func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 	return &Handler{bot: bot, state: make(map[int64]string), userData: make(map[int64]*models.User), store: store}
 }
@@ -127,7 +125,7 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 	c.Edit(c.Callback().Message.Text, &tg.ReplyMarkup{})
 
 	callBackData := strings.TrimSpace(c.Callback().Data)
-	taskTag := strings.Replace(callBackData, "_task_completed", "", 1)
+	taskTag := models.TaskTag(strings.Replace(callBackData, "_task_completed", "", 1))
 	chatID := c.Chat().ID
 
 	err := h.store.IncrementStreak(chatID, taskTag)
@@ -173,7 +171,7 @@ func (h *Handler) handleTaskSkipped(c tg.Context) error {
 	return nil
 }
 
-func (h *Handler) handleMaxStreak(chatID int64, taskTag string) error {
+func (h *Handler) handleMaxStreak(chatID int64, taskTag models.TaskTag) error {
 	task, err := h.store.GetTask(chatID, taskTag)
 
 	if err != nil {
@@ -235,24 +233,19 @@ func (h *Handler) handleStreak(c tg.Context) error {
 		messageBuilder.WriteString("\n\nYou don't have any active tasks yet!\nStart by setting some goals.")
 	} else {
 		for _, task := range tasks {
-			// Only display active tasks for streaks
 			if task.IsActive {
-				// Determine task-specific emoji
-				// Normalize task tag for consistent matching
-				normalizedTag := strings.ToLower(strings.ReplaceAll(task.Tag, " ", "_"))
-				slog.Info("Debugging normalized tag", "normalized_tag", normalizedTag)
 				taskEmoji := "✅" // Default emoji
-				switch normalizedTag {
-				case "daily_morning":
+				switch task.Tag {
+				case models.TagMorning:
 					taskEmoji = "⏰"
-				case "daily_sunlight":
+				case models.TagSunlight:
 					taskEmoji = "☀️"
-				case "daily_excercise":
+				case models.TagExercise:
 					taskEmoji = "💪"
-				case "daily_meal":
+				case models.TagMeal:
 					taskEmoji = "🥗"
-				case "daily_personal":
-					taskEmoji = "📔" // Journal emoji for personal goal
+				case models.TagPersonal:
+					taskEmoji = "📔"
 				}
 
 				currentStreakEmoji := "⚡️"

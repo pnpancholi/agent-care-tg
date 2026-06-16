@@ -5,6 +5,16 @@ import (
 	"time"
 )
 
+type TaskTag string
+
+const (
+	TagMorning  TaskTag = "daily_morning"
+	TagSunlight TaskTag = "daily_sunlight"
+	TagExercise TaskTag = "daily_excercise"
+	TagMeal     TaskTag = "daily_meal"
+	TagPersonal TaskTag = "daily_personal"
+)
+
 type User struct {
 	ChatID       int64        `json:"chat_id" db:"chat_id"`
 	Username     string       `json:"username" db:"username"`
@@ -17,14 +27,14 @@ type User struct {
 type Task struct {
 	ID int64 `json:"id" db:"id"`
 	// this is the chat_id of the user, to maintain one to many relationship
-	ChatID        int64  `json:"chat_id" db:"chat_id"`
-	Name          string `json:"name" db:"name"`
-	Description   string `json:"description" db:"description"`
-	Tag           string `json:"tag" db:"tag"`
-	IsActive      bool   `json:"is_active" db:"is_active"`
-	IsDefault     bool   `json:"is_default" db:"is_default"`
-	CurrentStreak uint64 `json:"current_streak" db:"current_streak"`
-	MaxStreak     uint64 `json:"max_streak" db:"max_streak"`
+	ChatID        int64   `json:"chat_id" db:"chat_id"`
+	Name          string  `json:"name" db:"name"`
+	Description   string  `json:"description" db:"description"`
+	Tag           TaskTag `json:"tag" db:"tag"`
+	IsActive      bool    `json:"is_active" db:"is_active"`
+	IsDefault     bool    `json:"is_default" db:"is_default"`
+	CurrentStreak uint64  `json:"current_streak" db:"current_streak"`
+	MaxStreak     uint64  `json:"max_streak" db:"max_streak"`
 }
 
 func NewUser() *User {

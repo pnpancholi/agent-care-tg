@@ -28,7 +28,7 @@ func (s *Store) ResetStreak(chatID int64, taskTag string) error {
 	return nil
 }
 
-func (s *Store) IncrementStreak(chatID int64, taskTag string) error {
+func (s *Store) IncrementStreak(chatID int64, taskTag models.TaskTag) error {
 	query := `UPDATE tasks SET current_streak = current_streak + 1 WHERE chat_id = $1 AND tag = $2`
 	_, err := s.db.Exec(query, chatID, taskTag)
 
@@ -141,7 +141,7 @@ func (s *Store) GetAllTasksForUserByChatID(chatID int64) ([]models.Task, error) 
 	return tasks, nil
 }
 
-func (s *Store) GetTask(chatID int64, taskTag string) (models.Task, error) {
+func (s *Store) GetTask(chatID int64, taskTag models.TaskTag) (models.Task, error) {
 	var task models.Task
 	query := `SELECT * FROM tasks WHERE chat_id = $1 AND tag = $2`
 	err := s.db.Get(&task, query, chatID, taskTag)

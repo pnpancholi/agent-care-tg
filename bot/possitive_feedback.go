@@ -1,14 +1,18 @@
 package bot
 
-var feedbackMap = map[string][]string{
-	"daily_morning":   dailyMorning,
-	"daily_sunlight":  dailySunlight,
-	"daily_excercise": dailyExercise,
-	"daily_meal":      dailyMeal,
-	"daily_personal":  dailyPersonal,
+import (
+	"agent-care-tg/models"
+)
+
+var feedbackMap = map[models.TaskTag][]string{
+	models.TagMorning:  dailyMorning,
+	models.TagSunlight: dailySunlight,
+	models.TagExercise: dailyExercise,
+	models.TagMeal:     dailyMeal,
+	models.TagPersonal: dailyPersonal,
 }
 
-func GetFeedbackMessage(taskTag string) string {
+func GetFeedbackMessage(taskTag models.TaskTag) string {
 	index := 0
 
 	messages, ok := feedbackMap[taskTag]
