@@ -4,11 +4,10 @@ import (
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
 	"fmt"
-	"log/slog"
-	"strings"
-
 	tz "github.com/bradfitz/latlong"
 	tg "gopkg.in/telebot.v3"
+	"log/slog"
+	"strings"
 )
 
 type Handler struct {
@@ -17,6 +16,8 @@ type Handler struct {
 	userData map[int64]*models.User
 	store    *storage.Store
 }
+
+var feedbackIndex = 0
 
 func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 	return &Handler{bot: bot, state: make(map[int64]string), userData: make(map[int64]*models.User), store: store}
@@ -145,6 +146,7 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 		return fmt.Errorf("Failed to update max streak: %w", err)
 	}
 
+	taskTagClean := strings.ReplaceAll(strings.Title(strings.ReplaceAll("daily_morning", "_", " ")), " ", "_")
 	c.Send("Great job, keep it up!")
 	slog.Info("Task completed clicked", "data", taskTag)
 	c.Respond()
