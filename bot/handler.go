@@ -4,18 +4,23 @@ import (
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
 	"fmt"
-	tz "github.com/bradfitz/latlong"
-	tg "gopkg.in/telebot.v3"
 	"log/slog"
 	"strings"
+	"sync"
+
+	tz "github.com/bradfitz/latlong"
+	tg "gopkg.in/telebot.v3"
 )
 
 type Handler struct {
 	bot      *tg.Bot
+	mu       sync.RWMutex
 	state    map[int64]string
 	userData map[int64]*models.User
 	store    *storage.Store
 }
+
+var feedbackIndex = 0
 
 func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 	return &Handler{bot: bot, state: make(map[int64]string), userData: make(map[int64]*models.User), store: store}
@@ -66,42 +71,55 @@ func (h *Handler) handleLearnHowItWorks(c tg.Context) error {
 }
 
 func (h *Handler) handleGetStarted(c tg.Context) error {
+	h.mu.Lock()
 	h.userData[c.Chat().ID] = models.NewUser()
 	h.state[c.Chat().ID] = "waiting_for_name"
+	h.mu.Unlock()
+
 	removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
 	return c.Send("What should I call you?", removeKeyboard)
 }
 
 func (h *Handler) handleUserRegistration(c tg.Context) error {
-	switch h.state[c.Chat().ID] {
+	h.mu.RLock()
+	state := h.state[c.Chat().ID]
+	h.mu.RUnlock()
+
+	switch state {
 	case "waiting_for_name":
+		h.mu.Lock()
 		h.userData[c.Chat().ID].Username = c.Text()
 		h.state[c.Chat().ID] = "waiting_for_goal"
+		h.mu.Unlock()
 		return c.Send("Nice to meet you " + c.Text() + "!" + "\n\nWhat's your personal goal?")
 
 	case "waiting_for_goal":
+		h.mu.Lock()
 		h.userData[c.Chat().ID].PersonalGoal = c.Text()
 		h.state[c.Chat().ID] = "waiting_for_timezone"
+		h.mu.Unlock()
 		markup := &tg.ReplyMarkup{ResizeKeyboard: true, OneTimeKeyboard: true}
 		locationBtn := markup.Location("Share my location")
 		markup.Reply(markup.Row(locationBtn))
 		return c.Send(("Almost done! Please share your location so you can get reminders in your timezone"), markup)
 
 	case "waiting_for_timezone":
-		//capture response
 		lat := c.Message().Location.Lat
 		lng := c.Message().Location.Lng
 		timezone := tz.LookupZoneName(float64(lat), float64(lng))
+
 		if timezone == "" {
 			return c.Send("Sorry, I coulnd't detect your timezone. Please try again")
 		}
-		h.userData[c.Chat().ID].Timezone = timezone
-		// ToDo: clear out state
+
+		h.mu.Lock()
 		user := h.userData[c.Chat().ID]
 		user.ChatID = c.Chat().ID
 		user.TGUsername = c.Sender().Username
 		user.Timezone = timezone
-
+		delete(h.state, c.Chat().ID)
+		delete(h.userData, c.Chat().ID)
+		h.mu.Unlock()
 		removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
 
 		if err := h.store.SaveUser(user); err != nil {
@@ -144,8 +162,7 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 		return fmt.Errorf("Failed to update max streak: %w", err)
 	}
 
-	feedbackMsg := GetFeedbackMessage(taskTag)
-	c.Send(feedbackMsg)
+	c.Send(GetFeedbackMessage(taskTag))
 	slog.Info("Task completed clicked", "data", taskTag)
 	c.Respond()
 	return nil
@@ -156,7 +173,7 @@ func (h *Handler) handleTaskSkipped(c tg.Context) error {
 	c.Edit(c.Callback().Message.Text, &tg.ReplyMarkup{})
 
 	callBackData := strings.TrimSpace(c.Callback().Data)
-	taskTag := strings.Replace(callBackData, "_task_skipped", "", 1)
+	taskTag := models.TaskTag(strings.Replace(callBackData, "_task_skipped", "", 1))
 	chatID := c.Chat().ID
 
 	err := h.store.ResetStreak(chatID, taskTag)
@@ -233,6 +250,7 @@ func (h *Handler) handleStreak(c tg.Context) error {
 		messageBuilder.WriteString("\n\nYou don't have any active tasks yet!\nStart by setting some goals.")
 	} else {
 		for _, task := range tasks {
+			// Only display active tasks for streaks
 			if task.IsActive {
 				taskEmoji := "✅" // Default emoji
 				switch task.Tag {
@@ -245,7 +263,7 @@ func (h *Handler) handleStreak(c tg.Context) error {
 				case models.TagMeal:
 					taskEmoji = "🥗"
 				case models.TagPersonal:
-					taskEmoji = "📔"
+					taskEmoji = "📔" // Journal emoji for personal goal
 				}
 
 				currentStreakEmoji := "⚡️"
