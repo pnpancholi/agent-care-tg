@@ -1,4 +1,12 @@
-# Agent Care
+<p align="center"># Agent Care</p>
+
+- **Author**: Pradhumna Pancholi
+- **Last Commit**: <!-- Auto-generated: Update with last commit hash/date -->
+- **Deployment Status**: <!-- Auto-generated: Add a shield.io badge or status here -->
+- **Version**: v0.1.0 <!-- Initial version -->
+- **X Handle**: @knowpradhumna
+
+---
 
 Agent Care is a specialized Telegram companion designed for NEETs and individuals navigating the heavy fog of a depressive episode. 
 
