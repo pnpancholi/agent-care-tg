@@ -7,6 +7,7 @@ sudo docker rm agent-care-bot || true
 sudo docker run -d \
   --name agent-care-bot \
   --restart always \
-  --env TG_BOT_TOKEN="${TG_BOT_TOKEN}" \
-  --env DATABASE_URL="${DATABASE_URL}" \
+  --env-file ~/.env \
   agent-care-bot
+
+rm -f ~/.env
