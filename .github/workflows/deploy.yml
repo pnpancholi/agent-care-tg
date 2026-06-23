@@ -1,9 +1,9 @@
-name: Dev Deployment
+name: Deployment
 
 on:
   push:
     branches: 
-    - dev
+    - main
 
 jobs:
   deploy:
@@ -31,6 +31,19 @@ jobs:
         run: |
           gcloud compute scp agent-care-bot.tar.gz ${{ secrets.GCP_VM_NAME }}:~ \
             --zone ${{ secrets.GCP_VM_ZONE }}
+      
+      - name: Create .env file
+        run: |
+          cat <<EOF > .env
+          TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }}
+          DATABASE_URL=${{ secrets.DATABASE_URL }}
+          EOF
+          chmod 600 .env
+
+      - name: Copy .env file to VM
+        run: |
+          gcloud compute scp .env ${{ secrets.GCP_VM_NAME }}:~ \
+            --zone ${{ secrets.GCP_VM_ZONE }}
 
       - name: Copy deploy script to VM
         run: |
@@ -41,4 +54,4 @@ jobs:
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
           --zone ${{ secrets.GCP_VM_ZONE }} \
-          --command "TG_BOT_TOKEN=${{ secrets.TG_BOT_TOKEN }} DATABASE_URL=${{ secrets.DATABASE_URL }} bash ~/deploy.sh"     
+          --command  "bash ~/deploy.sh"     
