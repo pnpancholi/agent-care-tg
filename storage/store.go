@@ -4,10 +4,9 @@ import (
 	"agent-care-tg/models"
 	"database/sql"
 	"fmt"
+	"github.com/jmoiron/sqlx"
 	"log/slog"
 	"time"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type Store struct {
@@ -18,7 +17,7 @@ func NewStore(db *sqlx.DB) *Store {
 	return &Store{db: db}
 }
 
-func (s *Store) ResetStreak(chatID int64, taskTag string) error {
+func (s *Store) ResetStreak(chatID int64, taskTag models.TaskTag) error {
 	query := `UPDATE tasks SET current_streak = 0 WHERE chat_id = $1 AND tag = $2`
 	_, err := s.db.Exec(query, chatID, taskTag)
 
@@ -29,7 +28,7 @@ func (s *Store) ResetStreak(chatID int64, taskTag string) error {
 	return nil
 }
 
-func (s *Store) IncrementStreak(chatID int64, taskTag string) error {
+func (s *Store) IncrementStreak(chatID int64, taskTag models.TaskTag) error {
 	query := `UPDATE tasks SET current_streak = current_streak + 1 WHERE chat_id = $1 AND tag = $2`
 	_, err := s.db.Exec(query, chatID, taskTag)
 
@@ -52,11 +51,11 @@ func (s *Store) GenerateDefaultTasks(userID int64) error {
 	query := `INSERT INTO tasks (chat_id, name, description, tag, is_active, is_default, current_streak, max_streak) VALUES (:chat_id, :name, :description, :tag, :is_active, :is_default, :current_streak, :max_streak)`
 
 	defaultTasks := []models.Task{
-		{ChatID: userID, Name: "Morning Routine", Description: "Morning Routine", Tag: "daily_morning", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Sunlight", Description: "Sunlight Routine", Tag: "daily_sunlight", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Workout", Description: "Workout", Tag: "daily_excercise", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Healthy Meal", Description: "Healthy Meal", Tag: "daily_meal", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
-		{ChatID: userID, Name: "Personal Goal", Description: "Personal Goal", Tag: "daily_personal", IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Morning Routine", Description: "Morning Routine", Tag: models.TagMorning, IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Sunlight", Description: "Sunlight Routine", Tag: models.TagSunlight, IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Workout", Description: "Workout", Tag: models.TagExercise, IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Healthy Meal", Description: "Healthy Meal", Tag: models.TagMeal, IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
+		{ChatID: userID, Name: "Personal Goal", Description: "Personal Goal", Tag: models.TagPersonal, IsActive: true, IsDefault: true, CurrentStreak: 0, MaxStreak: 0},
 	}
 
 	for _, task := range defaultTasks {
@@ -119,7 +118,30 @@ func (s *Store) UpdateLastSentAt(user *models.User) error {
 
 }
 
-func (s *Store) GetTask(chatID int64, taskTag string) (models.Task, error) {
+func (s *Store) GetUserByChatID(chatID int64) (models.User, error) {
+	var user models.User
+	query := `SELECT * from users WHERE chat_id = $1`
+
+	err := s.db.Get(&user, query, chatID)
+	if err != nil {
+		return user, err
+	}
+	return user, nil
+}
+
+func (s *Store) GetAllTasksForUserByChatID(chatID int64) ([]models.Task, error) {
+	var tasks []models.Task
+
+	query := `SELECT * FROM tasks WHERE chat_id = $1`
+	err := s.db.Select(&tasks, query, chatID)
+
+	if err != nil {
+		return tasks, err
+	}
+	return tasks, nil
+}
+
+func (s *Store) GetTask(chatID int64, taskTag models.TaskTag) (models.Task, error) {
 	var task models.Task
 	query := `SELECT * FROM tasks WHERE chat_id = $1 AND tag = $2`
 	err := s.db.Get(&task, query, chatID, taskTag)
@@ -131,7 +153,6 @@ func (s *Store) GetTask(chatID int64, taskTag string) (models.Task, error) {
 }
 
 func (s *Store) UpdateMaxStreak(taskID int64, newStreak int64) error {
-	slog.Info("here")
 	query := `UPDATE tasks SET max_streak = $1 WHERE id = $2`
 
 	res, err := s.db.Exec(query, newStreak, taskID)

@@ -6,11 +6,10 @@ import (
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
 	"fmt"
-	"log/slog"
-	"time"
-
 	"github.com/robfig/cron/v3"
 	tg "gopkg.in/telebot.v3"
+	"log/slog"
+	"time"
 )
 
 type Scheduler struct {
@@ -93,6 +92,7 @@ func (s *Scheduler) testMessage() {
 	}
 
 }
+
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
 	s.sendMessageToAllUsersInTimeZone(localHour, MorningTag, bot.MsgMorningCheckIn)
 }

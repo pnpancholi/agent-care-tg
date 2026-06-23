@@ -2,6 +2,17 @@ package models
 
 import (
 	"database/sql"
+	"time"
+)
+
+type TaskTag string
+
+const (
+	TagMorning  TaskTag = "daily_morning"
+	TagSunlight TaskTag = "daily_sunlight"
+	TagExercise TaskTag = "daily_excercise"
+	TagMeal     TaskTag = "daily_meal"
+	TagPersonal TaskTag = "daily_personal"
 )
 
 type User struct {
@@ -11,20 +22,23 @@ type User struct {
 	Timezone     string       `json:"timezone" db:"timezone"`
 	PersonalGoal string       `json:"personal_goal" db:"personal_goal"`
 	LastSentAt   sql.NullTime `json:"last_sent_at" db:"last_sent_at"`
+	JoinedAt     time.Time    `json:"joined_at" db:"joined_at"`
 }
 type Task struct {
 	ID int64 `json:"id" db:"id"`
 	// this is the chat_id of the user, to maintain one to many relationship
-	ChatID        int64  `json:"chat_id" db:"chat_id"`
-	Name          string `json:"name" db:"name"`
-	Description   string `json:"description" db:"description"`
-	Tag           string `json:"tag" db:"tag"`
-	IsActive      bool   `json:"is_active" db:"is_active"`
-	IsDefault     bool   `json:"is_default" db:"is_default"`
-	CurrentStreak uint64 `json:"current_streak" db:"current_streak"`
-	MaxStreak     uint64 `json:"max_streak" db:"max_streak"`
+	ChatID        int64   `json:"chat_id" db:"chat_id"`
+	Name          string  `json:"name" db:"name"`
+	Description   string  `json:"description" db:"description"`
+	Tag           TaskTag `json:"tag" db:"tag"`
+	IsActive      bool    `json:"is_active" db:"is_active"`
+	IsDefault     bool    `json:"is_default" db:"is_default"`
+	CurrentStreak uint64  `json:"current_streak" db:"current_streak"`
+	MaxStreak     uint64  `json:"max_streak" db:"max_streak"`
 }
 
 func NewUser() *User {
-	return &User{}
+	return &User{
+		JoinedAt: time.Now(), // Initialize JoinedAt with the current time
+	}
 }

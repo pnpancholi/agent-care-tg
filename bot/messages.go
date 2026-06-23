@@ -76,4 +76,19 @@ Hey %s ! Did you put in your hour today?
 One focused hour every day compounds into something massive over 100 days. Don't break the chain.
 
 Did you work on your personal goal today?`
+	MsgProfileData = `*👤 Your Profile* ✨
+
+*Name:* %s
+*Goal:* %s
+*Timezone:* %s 🌍
+*Joined:* %s`
+
+	MsgStreaksHeader = `
+✨ *Your Streaks Overview* ✨
+---------------------------------------`
+	MsgTaskStreak    = `
+*%s %s*
+  _Current:_ %d days %s
+  _Best:_ %d days 🏆
+---------------------------------------`
 )
