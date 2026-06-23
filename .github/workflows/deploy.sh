@@ -11,3 +11,5 @@ sudo docker run -d \
   agent-care-bot
 
 rm -f ~/.env
+rm -f ~/agent-care-bot.tar.gz
+sudo docker image prune -f
