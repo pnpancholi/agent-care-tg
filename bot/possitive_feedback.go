@@ -2,6 +2,8 @@ package bot
 
 import (
 	"agent-care-tg/models"
+	"log/slog"
+	"time"
 )
 
 var feedbackMap = map[models.TaskTag][]string{
@@ -13,14 +15,15 @@ var feedbackMap = map[models.TaskTag][]string{
 }
 
 func GetFeedbackMessage(taskTag models.TaskTag) string {
-	index := 0
-
+	slog.Info("GetFeedbackMessage", "taskTag", taskTag)
 	messages, ok := feedbackMap[taskTag]
 	if !ok || len(messages) == 0 {
 		return "Great Job, another win in the books!"
 	}
 
-	return messages[index]
+	idx := time.Now().Day()
+
+	return messages[idx]
 }
 
 var dailyMorning = []string{
@@ -49,6 +52,12 @@ var dailyMorning = []string{
 	"You’ve officially started your day with a win. Completing your routine is a clear signal to yourself that your goals are worth the effort.",
 	"Great work finishing your morning habits. You’ve created a pocket of peace and productivity that will support you for the next twelve hours.",
 	"Routine finished. You’ve started your day with intention and action. That’s a powerful combination that’s going to make today great.",
+	"You’ve earned this feeling of accomplishment. Every habit completed is a step closer to the life you envision.",
+	"Another morning, another routine mastered. You’re building an unshakeable foundation for success, one intentional action at a time.",
+	"Well done on your morning discipline. That commitment to yourself is a beacon, guiding you through the challenges of the day.",
+	"You’ve successfully tuned into your inner rhythm. This focused start is your secret weapon for a productive and fulfilling day.",
+	"Fantastic effort on your morning routine. You’ve cultivated mental clarity and physical readiness, setting a high bar for today’s achievements.",
+	"Your morning win streak continues! This dedication to self-care and preparation is truly inspiring. Keep soaring!",
 }
 
 var dailySunlight = []string{
@@ -77,6 +86,12 @@ var dailySunlight = []string{
 	"Great work on getting that fresh air. You’ve stepped away from the noise and recharged your battery with the best fuel available: nature.",
 	"Sunlight habit finished. You’ve aligned your internal clock with the day, setting yourself up for peak performance and a restful night.",
 	"You’ve officially conquered the outdoor habit. That combination of light and air is the ultimate recipe for a clear head and a steady mood.",
+	"The fresh air clear-out is complete. You've swept away mental cobwebs and invited in a wave of new energy for whatever comes next.",
+	"You've honored your body's need for natural light. That simple act is a powerful stimulant for mood, sleep, and overall vitality.",
+	"Daily dose of nature secured. You've taken a moment to ground yourself, which will anchor your focus and calm throughout the day.",
+	"Another successful reconnection with the outside world. This habit is your secret weapon for sustained clarity and a brighter outlook.",
+	"Your system is re-calibrated. By stepping into the light, you've optimized your internal clock for peak performance and restful nights.",
+	"Well done catching those rays! You've infused your day with a natural energy boost, proving small habits make a huge difference.",
 }
 
 var dailyExercise = []string{
@@ -105,6 +120,12 @@ var dailyExercise = []string{
 	"Great work on completing your physical challenge. You’ve stepped up and done what most people only talk about doing.",
 	"Exercise habit finished. You’ve primed your body for peak performance and your mind for steady focus. You’re crushing it.",
 	"You’ve officially conquered your daily movement. That combination of effort and consistency is the fastest way to reach your goals.",
+	"Your workout is complete. You’ve proven your dedication to your physical well-being, building strength and resilience with every effort.",
+	"Great job on that exercise session! You've fueled your body with movement and your mind with focus. Carry that momentum into your day.",
+	"Another victory for your health! You’ve pushed your limits and invested in a stronger, more capable you. That's true progress.",
+	"Exercise done. You've cleared the mental fog and generated powerful endorphins. You're now physically and mentally primed for success.",
+	"Well done maintaining your commitment to fitness. Every rep and every step builds unwavering discipline and self-confidence.",
+	"You've conquered another physical challenge. This consistency is not just about muscle, it’s about building an unbreakable spirit.",
 }
 
 var dailyMeal = []string{
@@ -133,6 +154,12 @@ var dailyMeal = []string{
 	"Great work on completing your healthy eating goal. You’ve stepped up and made a choice that your future self will thank you for.",
 	"Meal habit finished. You’ve primed your system for peak energy and your mind for steady concentration. You’re crushing it.",
 	"You’ve officially conquered your daily nutrition. That combination of quality and intention is the fastest way to feel your absolute best.",
+	"Super! You’ve consciously nourished your body, providing the high-quality fuel it needs for sustained energy and sharp mental performance.",
+	"Great job on your mindful eating. This intentional choice reinforces your commitment to long-term health and vitality.",
+	"You’ve successfully fueled your system with optimal nutrients. Expect increased clarity and focus as your body thrives.",
+	"Healthy eating logged. Each deliberate meal strengthens your well-being and empowers you to perform at your best.",
+	"Nourishment done. You’ve treated your body with the respect it deserves, setting a powerful example for sustained self-care.",
+	"Well done on your nutrition choice! This consistent effort creates a strong foundation for your energy, mood, and overall health.",
 }
 
 var dailyPersonal = []string{
@@ -161,4 +188,10 @@ var dailyPersonal = []string{
 	"Great work on completing your personal challenge. You’ve stepped up and done the work that actually moves the needle for you.",
 	"Objective habit finished. You’ve primed your mind for even bigger successes and proved that you have what it takes to follow through.",
 	"You’ve officially conquered your daily goal. That combination of focus and action is the fastest way to turn your ambitions into reality.",
+	"Personal goal achieved! You’ve demonstrated incredible focus and resolve. This progress fuels your journey towards even greater accomplishments.",
+	"Your consistent effort in moving the needle on what matters most is truly commendable.",
+	"Another victory for your purpose! You’ve prioritized meaningful action, building a life of intention, one successful task at a time.",
+	"Objective done. You’ve proven your ability to overcome distractions and complete tasks that contribute to your larger vision.",
+	"Well done maintaining your commitment to personal growth. This discipline is the bedrock of lasting change and profound achievement.",
+	"You’ve successfully pushed your boundaries. Every personal win like this strengthens your confidence and expands what you believe is possible.",
 }

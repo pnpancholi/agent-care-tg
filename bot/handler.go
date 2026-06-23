@@ -20,8 +20,6 @@ type Handler struct {
 	store    *storage.Store
 }
 
-var feedbackIndex = 0
-
 func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 	return &Handler{bot: bot, state: make(map[int64]string), userData: make(map[int64]*models.User), store: store}
 }
