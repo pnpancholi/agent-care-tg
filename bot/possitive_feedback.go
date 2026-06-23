@@ -21,7 +21,7 @@ func GetFeedbackMessage(taskTag models.TaskTag) string {
 		return "Great Job, another win in the books!"
 	}
 
-	idx := time.Now().Day()
+	idx := (time.Now().Day() - 1) % len(messages)
 
 	return messages[idx]
 }
