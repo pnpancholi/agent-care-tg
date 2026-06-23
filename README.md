@@ -4,7 +4,7 @@
 - **Last Commit**: <!-- Auto-generated: Update with last commit hash/date -->
 - **Deployment Status**: <!-- Auto-generated: Add a shield.io badge or status here -->
 - **Version**: v0.1.0 <!-- Initial version -->
-- **X Handle**: @knowpradhumna
+- **X Handle**: @YourXHandle 
 
 ---
 
