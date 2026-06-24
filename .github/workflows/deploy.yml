@@ -4,10 +4,15 @@ on:
   push:
     branches: 
     - main
+    - dev
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{github.ref == 'refs/heads/main' && 'prod' || 'dev'}}
+
+    env:
+      ENV_NAME: ${{github.ref == 'refs/heads/main' && 'prod' || 'dev'}}
 
     steps:
       - name: Checkout code
@@ -22,14 +27,18 @@ jobs:
         uses: google-github-actions/setup-gcloud@v1
       
       - name: Build Docker image
-        run: docker build -t agent-care-bot .
+        run: docker build -t agent-care-bot-${{env.ENV_NAME}} .
 
       - name: Save Docker image
-        run: docker save agent-care-bot | gzip > agent-care-bot.tar.gz
+        run: docker save agent-care-bot-${{env.ENV_NAME}} | gzip > agent-care-bot-${{env.ENV_NAME}}.tar.gz
 
       - name: Copy image to VM
         run: |
-          gcloud compute scp agent-care-bot.tar.gz ${{ secrets.GCP_VM_NAME }}:~ \
+          gcloud compute ssh ${{secrets.GCP_VM_NAME}} \
+            --zone ${{secrets.GCP_VM_ZONE}} \
+            --command "mkdir -p ~/agent-care-bot-${{env.ENV_NAME}}"
+          gcloud compute scp agent-care-bot-${{env.ENV_NAME}}.tar.gz \
+            ${{ secrets.GCP_VM_NAME }}:~/agent-care-bot-${{env.ENV_NAME}}/ \
             --zone ${{ secrets.GCP_VM_ZONE }}
       
       - name: Create .env file
@@ -42,16 +51,18 @@ jobs:
 
       - name: Copy .env file to VM
         run: |
-          gcloud compute scp .env ${{ secrets.GCP_VM_NAME }}:~ \
+          gcloud compute scp .env \
+          ${{ secrets.GCP_VM_NAME }}:~/agent-care-bot-${{env.ENV_NAME}}/ \
             --zone ${{ secrets.GCP_VM_ZONE }}
 
       - name: Copy deploy script to VM
         run: |
-          gcloud compute scp .github/workflows/deploy.sh ${{ secrets.GCP_VM_NAME }}:~ \
+          gcloud compute scp .github/workflows/deploy.sh \
+          ${{ secrets.GCP_VM_NAME }}:~/agent-care-bot-${{env.ENV_NAME}}/ \
           --zone ${{ secrets.GCP_VM_ZONE }}
 
       - name: Deploy on VM
         run: |
           gcloud compute ssh ${{ secrets.GCP_VM_NAME }} \
           --zone ${{ secrets.GCP_VM_ZONE }} \
-          --command  "bash ~/deploy.sh"     
+          --command "cd ~/agent-care-bot-${{env.ENV_NAME}} && bash deploy.sh ${{env.ENV_NAME}}"
