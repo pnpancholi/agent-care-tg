@@ -1,13 +1,19 @@
 name: Deployment
+run-name: Deploy ${{github.ref_name}} by @${{github.actor}}
 
 on:
   push:
     branches: 
     - main
     - dev
+    paths-ignore:
+    - '**.md'
+    - 'README.md'
+    - 'docs/**'
 
 jobs:
   deploy:
+    name: Deploy to ${{github.ref == 'refs/heads/main' && 'production' || 'staging'}}
     runs-on: ubuntu-latest
     environment: ${{github.ref == 'refs/heads/main' && 'prod' || 'staging'}}
 
