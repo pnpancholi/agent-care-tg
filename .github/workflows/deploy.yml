@@ -1,4 +1,5 @@
 name: Deployment
+run-name: Deploy ${{github.ref}} by @${{github.actor}}
 
 on:
   push:
@@ -8,6 +9,7 @@ on:
 
 jobs:
   deploy:
+    name: Deploy to ${{github.ref == 'refs/heads/main' && 'production' || 'staging'}}
     runs-on: ubuntu-latest
     environment: ${{github.ref == 'refs/heads/main' && 'prod' || 'staging'}}
 
