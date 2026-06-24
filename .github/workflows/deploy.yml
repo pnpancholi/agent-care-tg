@@ -9,10 +9,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: ${{github.ref == 'refs/heads/main' && 'prod' || 'dev'}}
+    environment: ${{github.ref == 'refs/heads/main' && 'prod' || 'staging'}}
 
     env:
-      ENV_NAME: ${{github.ref == 'refs/heads/main' && 'prod' || 'dev'}}
+      ENV_NAME: ${{github.ref == 'refs/heads/main' && 'prod' || 'staging'}}
 
     steps:
       - name: Checkout code
