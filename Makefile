@@ -1,4 +1,4 @@
-.PHONY: ndrun build clean migrate-up migrate-down
+.PHONY: run build clean migrate-up migrate-down
 
 BINARY_NAME=agent-care-tg
 

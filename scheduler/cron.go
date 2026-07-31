@@ -37,9 +37,9 @@ func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 }
 
 func (s *Scheduler) Start() {
-	s.cron.AddFunc("*/2 * * * *", func() {
-		s.testMessage()
-	})
+	// s.cron.AddFunc("*/2 * * * *", func() {
+	// 	s.testMessage()
+	// })
 	s.cron.AddFunc("*/10 * * * *", func() {
 		s.sendMorningMessage(7)
 		s.checkInForSunlight(14)
