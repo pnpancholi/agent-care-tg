@@ -32,6 +32,34 @@ When you're trapped in a long-term rut and even basic daily tasks feel insurmoun
 ---
 
 ## Roadmap
+
+Below is the planned evolution of Agent Care, moving from a structured MVP to a highly personalized companion.
+
+```mermaid
+timeline
+    title Agent Care Development Roadmap
+    Phase 1: Foundation (MVP) : Fixed Daily Routines : Timezone-Aware Check-ins : Empathetic Feedback Loop
+    Phase 2: Personalization (Next) : Custom User Tasks : Configurable Check-in Times : Routine Toggles
+    Phase 3: Insights (Future) : Weekly Progress Reports : Mood Tracking Integration : Data Export
+```
+
+### 🌱 Phase 1: The Foundation (Current MVP)
+- [x] Pre-configured, low-friction check-ins (Sunlight, Meals, Exercise, Morning/Night routines).
+- [x] Timezone-aware scheduling based on user location.
+- [x] Non-judgmental feedback loops (Positive reinforcement & setback support).
+- [x] Guardrails against notification fatigue (Auto-expiring buttons, duplicate-message protection).
+
+### 🛠️ Phase 2: Personalization (Up Next)
+- [ ] **Custom Tasks:** Allow users to define their own micro-habits and goals.
+- [ ] **Custom Schedules:** Let users adjust check-in times to fit unconventional sleep schedules.
+- [ ] **Toggle Routines:** Ability to mute or opt-out of specific default check-ins.
+- [ ] **Timezone Updates:** Allow manual overriding/updating of timezones.
+
+### 📈 Phase 3: Insights & Reflection (Future)
+- [ ] **Gentle Analytics:** Weekly/Monthly summaries of consistency without gamification pressure.
+- [ ] **Mood Tracking:** Simple integration to correlate task completion with overall mood.
+- [ ] **Data Export:** Optional export of check-in history for personal reflection or therapy sessions.
+
 ---
 ## Support
 ---
