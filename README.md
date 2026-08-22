@@ -62,5 +62,29 @@ timeline
 
 ---
 ## Support
+
+If you encounter any issues, have feature requests, or just want to discuss the project, we are here to help.
+
+- **Issues & Bugs:** Please open an issue on our [GitHub Issues](https://github.com/pnpancholi/agent-care-tg/issues) page.
+- **Direct Contact:** You can reach out directly on X (Twitter) [@knowpradhumna](https://x.com/knowpradhumna).
+
+*Note: Agent Care is designed as a gentle companion tool, not a medical device. If you or someone you know is struggling with a severe depressive episode or mental health crisis, please consider reaching out to a local mental health professional or crisis lifeline.*
+
 ---
 ## Contributing
+
+Contributions are always welcome! Whether it's a bug fix, a new feature, or a documentation improvement, your help is appreciated.
+
+**Our Philosophy:**
+- **Meaningful Contributions:** We care about changes that genuinely improve the experience for our users.
+- **Simplicity First:** Agent Care is designed to be low-friction and simple. Please ensure new features align with this focused approach rather than adding unnecessary bloat.
+- **AI/LLM Usage:** We are neutral on how you write your code. Whether you write every line by hand or use AI tools to assist you, what matters is the quality, readability, and intent behind the pull request.
+
+**How to Contribute:**
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request.
+
+*Please open an issue first to discuss any major changes before submitting a PR to ensure it aligns with the project's roadmap.*
