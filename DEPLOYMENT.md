@@ -149,6 +149,7 @@ sudo docker image prune -f
 - [ ] Create a separate Supabase project for staging; grab its **direct** connection string
 - [ ] Create `prod` and `staging` GitHub Environments
 - [ ] Add `TG_BOT_TOKEN` and `DATABASE_URL` to **both** environments with the correct per-environment values
+- [ ] Ensure database migrations are run against the database to create required tables (`goose -dir migrations postgres "YOUR_STAGING_DATABASE_URL" up`)
 - [ ] Confirm `GCP_SA_KEY`, `GCP_VM_NAME`, `GCP_VM_ZONE` exist as repo-level secrets
 - [ ] (Optional) Enable required reviewers on the `prod` environment
 - [ ] Push to `staging` branch and watch the first run closely
