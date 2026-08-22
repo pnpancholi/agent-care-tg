@@ -57,41 +57,42 @@ func (s *Scheduler) Stop() {
 	slog.Info("Scheduler stopped.")
 }
 
-func (s *Scheduler) testMessage() {
-	taskTag := "daily_morning"
-	msg := "Test message for"
-	users, err := s.store.GetAllUsers()
-
-	if err != nil {
-		slog.Error("Failed to access users from DB for sendMessageToAllUsersInTimeZone", "error", err)
-		return
-	}
-
-	for _, user := range users {
-
-		markup := &tg.ReplyMarkup{}
-		doneBtn := markup.Data("Done", taskTag+"_task_completed")
-		skippedBtn := markup.Data("Skipped", taskTag+"_task_skipped")
-		markup.Inline(markup.Row(doneBtn, skippedBtn))
-		formattedMsg := fmt.Sprintf(msg, user.Username)
-
-		msg, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
-		s.scheduleExpiry(msg)
-
-		if err != nil {
-			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
-			continue
-		}
-
-		if err := s.store.UpdateLastSentAt(&user); err != nil {
-			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
-			continue
-		}
-
-		slog.Info("Updated last_sent_at timestampe for the user")
-	}
-
-}
+//
+// func (s *Scheduler) testMessage() {
+// 	taskTag := "daily_morning"
+// 	msg := "Test message for"
+// 	users, err := s.store.GetAllUsers()
+//
+// 	if err != nil {
+// 		slog.Error("Failed to access users from DB for sendMessageToAllUsersInTimeZone", "error", err)
+// 		return
+// 	}
+//
+// 	for _, user := range users {
+//
+// 		markup := &tg.ReplyMarkup{}
+// 		doneBtn := markup.Data("Done", taskTag+"_task_completed")
+// 		skippedBtn := markup.Data("Skipped", taskTag+"_task_skipped")
+// 		markup.Inline(markup.Row(doneBtn, skippedBtn))
+// 		formattedMsg := fmt.Sprintf(msg, user.Username)
+//
+// 		msg, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
+// 		s.scheduleExpiry(msg)
+//
+// 		if err != nil {
+// 			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
+// 			continue
+// 		}
+//
+// 		if err := s.store.UpdateLastSentAt(&user); err != nil {
+// 			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
+// 			continue
+// 		}
+//
+// 		slog.Info("Updated last_sent_at timestampe for the user")
+// 	}
+//
+// }
 
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
 	s.sendMessageToAllUsersInTimeZone(localHour, MorningTag, bot.MsgMorningCheckIn)
@@ -133,8 +134,7 @@ func lastSentCheckPassed(user *models.User, hour uint8) bool {
 	if lastSentLocalTime.Year() == localTime.Year() &&
 		lastSentLocalTime.Month() == localTime.Month() &&
 		lastSentLocalTime.Day() == localTime.Day() &&
-		lastSentLocalTime.Hour() == int(hour) &&
-		lastSentLocalTime.Minute() >= 10 {
+		lastSentLocalTime.Hour() == int(hour) {
 		slog.Warn("Double message check ", "username", user.TGUsername)
 		return false
 	}
