@@ -27,7 +27,7 @@ Messages are sent with Inline Keyboards (buttons) allowing users to easily respo
 - **"Done"**: Registers task completion.
 - **"Skipped"**: Acknowledges that the task was missed.
 
-To avoid retroactive polling and database pollution, message buttons are configured to expire and disappear after a short window (currently 2 minutes).
+To avoid retroactive polling and database pollution, message buttons are configured to expire and disappear after a short window (currently 60 minutes).
 
 ### 3.3. Empathetic Feedback Loop
 - **Positive Reinforcement**: Clicking "Done" triggers randomized positive reinforcement messages tailored to the specific activity.

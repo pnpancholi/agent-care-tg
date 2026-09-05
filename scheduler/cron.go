@@ -76,12 +76,13 @@ func (s *Scheduler) testMessage() {
 		formattedMsg := fmt.Sprintf(msg, user.Username)
 
 		msg, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
-		s.scheduleExpiry(msg)
 
 		if err != nil {
 			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
 			continue
 		}
+
+		s.scheduleExpiry(msg)
 
 		if err := s.store.UpdateLastSentAt(&user); err != nil {
 			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
