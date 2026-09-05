@@ -8,6 +8,7 @@ import (
 	tg "gopkg.in/telebot.v3"
 	"log/slog"
 	"strings"
+	"sync"
 )
 
 type Handler struct {
@@ -15,6 +16,7 @@ type Handler struct {
 	state    map[int64]string
 	userData map[int64]*models.User
 	store    *storage.Store
+	mu       sync.RWMutex
 }
 
 var feedbackIndex = 0
@@ -45,6 +47,38 @@ func (h *Handler) Register() {
 	})
 }
 
+// To handle read / write safely
+func (h *Handler) setState(chatID int64, step string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.state[chatID] = step
+}
+
+func (h *Handler) getState(chatID int64) string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.state[chatID]
+}
+
+func (h *Handler) getUser(chatID int64) *models.User {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if _, exists := h.userData[chatID]; !exists {
+		h.userData[chatID] = models.NewUser()
+	}
+	return h.userData[chatID]
+}
+
+func (h *Handler) clearUserState(chatID int64) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.state, chatID)
+	delete(h.userData, chatID)
+}
+
+// end of helper functions //
+
 func (h *Handler) handleStart(c tg.Context) error {
 	// 1. Send welcom message
 	c.Send(MsgWelcome, tg.ModeMarkdown)
@@ -68,22 +102,30 @@ func (h *Handler) handleLearnHowItWorks(c tg.Context) error {
 }
 
 func (h *Handler) handleGetStarted(c tg.Context) error {
-	h.userData[c.Chat().ID] = models.NewUser()
-	h.state[c.Chat().ID] = "waiting_for_name"
+	h.getUser(c.Chat().ID)
+	h.setState(c.Chat().ID, "waiting_for_name")
+	//h.userData[c.Chat().ID] = models.NewUser()
+	//	h.state[c.Chat().ID] = "waiting_for_name"
 	removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
 	return c.Send("What should I call you?", removeKeyboard)
 }
 
 func (h *Handler) handleUserRegistration(c tg.Context) error {
-	switch h.state[c.Chat().ID] {
+	switch h.getState(c.Chat().ID) {
 	case "waiting_for_name":
-		h.userData[c.Chat().ID].Username = c.Text()
-		h.state[c.Chat().ID] = "waiting_for_goal"
+		//h.userData[c.Chat().ID].Username = c.Text()
+		//h.state[c.Chat().ID] = "waiting_for_goal"
+		user := h.getUser(c.Chat().ID)
+		user.Username = c.Text()
+		h.setState(c.Chat().ID, "waiting_for_goal")
 		return c.Send("Nice to meet you " + c.Text() + "!" + "\n\nWhat's your personal goal?")
 
 	case "waiting_for_goal":
-		h.userData[c.Chat().ID].PersonalGoal = c.Text()
-		h.state[c.Chat().ID] = "waiting_for_timezone"
+		//h.userData[c.Chat().ID].PersonalGoal = c.Text()
+		//h.state[c.Chat().ID] = "waiting_for_timezone"
+		user := h.getUser(c.Chat().ID)
+		user.PersonalGoal = c.Text()
+		h.setState(c.Chat().ID, "waiting_for_timezone")
 		markup := &tg.ReplyMarkup{ResizeKeyboard: true, OneTimeKeyboard: true}
 		locationBtn := markup.Location("Share my location")
 		markup.Reply(markup.Row(locationBtn))
@@ -97,9 +139,10 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 		if timezone == "" {
 			return c.Send("Sorry, I coulnd't detect your timezone. Please try again")
 		}
-		h.userData[c.Chat().ID].Timezone = timezone
+		//h.userData[c.Chat().ID].Timezone = timezone
 		// ToDo: clear out state
-		user := h.userData[c.Chat().ID]
+		user := h.getUser(c.Chat().ID)
+		//user := h.userData[c.Chat().ID]
 		user.ChatID = c.Chat().ID
 		user.TGUsername = c.Sender().Username
 		user.Timezone = timezone
@@ -108,12 +151,14 @@ func (h *Handler) handleUserRegistration(c tg.Context) error {
 
 		if err := h.store.SaveUser(user); err != nil {
 			if strings.Contains(err.Error(), "duplicate key") {
+				h.clearUserState(c.Chat().ID)
 				return c.Send("You are already registered", removeKeyboard)
 			}
 			slog.Error("Failed to save user", "error", err)
 			return c.Send("Something went wrong with your profile. Please try again later", removeKeyboard)
 		}
 		//ToDo: Send a prep message
+		h.clearUserState(c.Chat().ID)
 		slog.Info("New user registered", "username", user.TGUsername)
 		c.Send("Thanks ! I am now setting up your profile...", removeKeyboard)
 		return c.Send("Perfect! You are all setup")
