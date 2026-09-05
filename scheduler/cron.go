@@ -26,7 +26,7 @@ const (
 	HealthyMealTag  = "daily_meal"
 )
 
-const EXPIRATION_TIME = 2
+const EXPIRATION_TIME = 60
 
 func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 	return &Scheduler{
@@ -124,7 +124,7 @@ func lastSentCheckPassed(user *models.User, hour uint8) bool {
 	if !user.LastSentAt.Valid {
 		return true
 	}
-	if localTime.Hour() != int(hour) || localTime.Minute() > 10 {
+	if localTime.Hour() != int(hour) {
 		return false
 	}
 
@@ -185,7 +185,7 @@ func (s *Scheduler) scheduleExpiry(msg *tg.Message) {
 
 		_, err := s.bot.Edit(msg, msg.Text, &tg.ReplyMarkup{})
 		if err != nil {
-			slog.Info("expiry worked")
+			slog.Error("Failed to revoke action buttons. Error: ", err)
 		}
 	}()
 }
