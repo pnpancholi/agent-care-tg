@@ -127,7 +127,7 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 	c.Edit(c.Callback().Message.Text, &tg.ReplyMarkup{})
 
 	callBackData := strings.TrimSpace(c.Callback().Data)
-	taskTag := strings.Replace(callBackData, "_task_completed", "", 1)
+	taskTag := models.TaskTag(strings.Replace(callBackData, "_task_completed", "", 1))
 	chatID := c.Chat().ID
 
 	err := h.store.IncrementStreak(chatID, taskTag)
@@ -146,9 +146,9 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 		return fmt.Errorf("Failed to update max streak: %w", err)
 	}
 
-	taskTagClean := strings.ReplaceAll(strings.Title(strings.ReplaceAll("daily_morning", "_", " ")), " ", "_")
+	//taskTagClean := strings.ReplaceAll(strings.Title(strings.ReplaceAll("daily_morning", "_", " ")), " ", "_")
 
-	c.Send(h.bot.)
+	c.Send(GetFeedbackMessage(taskTag))
 	slog.Info("Task completed clicked", "data", taskTag)
 	c.Respond()
 	return nil
@@ -159,7 +159,7 @@ func (h *Handler) handleTaskSkipped(c tg.Context) error {
 	c.Edit(c.Callback().Message.Text, &tg.ReplyMarkup{})
 
 	callBackData := strings.TrimSpace(c.Callback().Data)
-	taskTag := strings.Replace(callBackData, "_task_skipped", "", 1)
+	taskTag := models.TaskTag(strings.Replace(callBackData, "_task_skipped", "", 1))
 	chatID := c.Chat().ID
 
 	err := h.store.ResetStreak(chatID, taskTag)
@@ -174,7 +174,7 @@ func (h *Handler) handleTaskSkipped(c tg.Context) error {
 	return nil
 }
 
-func (h *Handler) handleMaxStreak(chatID int64, taskTag string) error {
+func (h *Handler) handleMaxStreak(chatID int64, taskTag models.TaskTag) error {
 	task, err := h.store.GetTask(chatID, taskTag)
 
 	if err != nil {
@@ -240,7 +240,7 @@ func (h *Handler) handleStreak(c tg.Context) error {
 			if task.IsActive {
 				// Determine task-specific emoji
 				// Normalize task tag for consistent matching
-				normalizedTag := strings.ToLower(strings.ReplaceAll(task.Tag, " ", "_"))
+				normalizedTag := strings.ToLower(strings.ReplaceAll(string(task.Tag), " ", "_"))
 				slog.Info("Debugging normalized tag", "normalized_tag", normalizedTag)
 				taskEmoji := "✅" // Default emoji
 				switch normalizedTag {
