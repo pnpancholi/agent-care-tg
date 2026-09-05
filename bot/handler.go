@@ -4,21 +4,22 @@ import (
 	"agent-care-tg/models"
 	"agent-care-tg/storage"
 	"fmt"
+	tz "github.com/bradfitz/latlong"
+	tg "gopkg.in/telebot.v3"
 	"log/slog"
 	"strings"
 	"sync"
-
-	tz "github.com/bradfitz/latlong"
-	tg "gopkg.in/telebot.v3"
 )
 
 type Handler struct {
 	bot      *tg.Bot
-	mu       sync.RWMutex
 	state    map[int64]string
 	userData map[int64]*models.User
 	store    *storage.Store
+	mu       sync.RWMutex
 }
+
+var feedbackIndex = 0
 
 func NewHandler(bot *tg.Bot, store *storage.Store) *Handler {
 	return &Handler{bot: bot, state: make(map[int64]string), userData: make(map[int64]*models.User), store: store}
@@ -46,6 +47,38 @@ func (h *Handler) Register() {
 	})
 }
 
+// To handle read / write safely
+func (h *Handler) setState(chatID int64, step string) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.state[chatID] = step
+}
+
+func (h *Handler) getState(chatID int64) string {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.state[chatID]
+}
+
+func (h *Handler) getUser(chatID int64) *models.User {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
+	if _, exists := h.userData[chatID]; !exists {
+		h.userData[chatID] = models.NewUser()
+	}
+	return h.userData[chatID]
+}
+
+func (h *Handler) clearUserState(chatID int64) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	delete(h.state, chatID)
+	delete(h.userData, chatID)
+}
+
+// end of helper functions //
+
 func (h *Handler) handleStart(c tg.Context) error {
 	// 1. Send welcom message
 	c.Send(MsgWelcome, tg.ModeMarkdown)
@@ -69,65 +102,63 @@ func (h *Handler) handleLearnHowItWorks(c tg.Context) error {
 }
 
 func (h *Handler) handleGetStarted(c tg.Context) error {
-	h.mu.Lock()
-	h.userData[c.Chat().ID] = models.NewUser()
-	h.state[c.Chat().ID] = "waiting_for_name"
-	h.mu.Unlock()
-
+	h.getUser(c.Chat().ID)
+	h.setState(c.Chat().ID, "waiting_for_name")
+	//h.userData[c.Chat().ID] = models.NewUser()
+	//	h.state[c.Chat().ID] = "waiting_for_name"
 	removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
 	return c.Send("What should I call you?", removeKeyboard)
 }
 
 func (h *Handler) handleUserRegistration(c tg.Context) error {
-	h.mu.RLock()
-	state := h.state[c.Chat().ID]
-	h.mu.RUnlock()
-
-	switch state {
+	switch h.getState(c.Chat().ID) {
 	case "waiting_for_name":
-		h.mu.Lock()
-		h.userData[c.Chat().ID].Username = c.Text()
-		h.state[c.Chat().ID] = "waiting_for_goal"
-		h.mu.Unlock()
+		//h.userData[c.Chat().ID].Username = c.Text()
+		//h.state[c.Chat().ID] = "waiting_for_goal"
+		user := h.getUser(c.Chat().ID)
+		user.Username = c.Text()
+		h.setState(c.Chat().ID, "waiting_for_goal")
 		return c.Send("Nice to meet you " + c.Text() + "!" + "\n\nWhat's your personal goal?")
 
 	case "waiting_for_goal":
-		h.mu.Lock()
-		h.userData[c.Chat().ID].PersonalGoal = c.Text()
-		h.state[c.Chat().ID] = "waiting_for_timezone"
-		h.mu.Unlock()
+		//h.userData[c.Chat().ID].PersonalGoal = c.Text()
+		//h.state[c.Chat().ID] = "waiting_for_timezone"
+		user := h.getUser(c.Chat().ID)
+		user.PersonalGoal = c.Text()
+		h.setState(c.Chat().ID, "waiting_for_timezone")
 		markup := &tg.ReplyMarkup{ResizeKeyboard: true, OneTimeKeyboard: true}
 		locationBtn := markup.Location("Share my location")
 		markup.Reply(markup.Row(locationBtn))
 		return c.Send(("Almost done! Please share your location so you can get reminders in your timezone"), markup)
 
 	case "waiting_for_timezone":
+		//capture response
 		lat := c.Message().Location.Lat
 		lng := c.Message().Location.Lng
 		timezone := tz.LookupZoneName(float64(lat), float64(lng))
-
 		if timezone == "" {
 			return c.Send("Sorry, I coulnd't detect your timezone. Please try again")
 		}
-
-		h.mu.Lock()
-		user := h.userData[c.Chat().ID]
+		//h.userData[c.Chat().ID].Timezone = timezone
+		// ToDo: clear out state
+		user := h.getUser(c.Chat().ID)
+		//user := h.userData[c.Chat().ID]
 		user.ChatID = c.Chat().ID
 		user.TGUsername = c.Sender().Username
 		user.Timezone = timezone
-		delete(h.state, c.Chat().ID)
-		delete(h.userData, c.Chat().ID)
-		h.mu.Unlock()
+
 		removeKeyboard := &tg.ReplyMarkup{RemoveKeyboard: true}
 
 		if err := h.store.SaveUser(user); err != nil {
 			if strings.Contains(err.Error(), "duplicate key") {
+				h.clearUserState(c.Chat().ID)
 				return c.Send("You are already registered", removeKeyboard)
 			}
 			slog.Error("Failed to save user", "error", err)
 			return c.Send("Something went wrong with your profile. Please try again later", removeKeyboard)
 		}
 		//ToDo: Send a prep message
+		h.clearUserState(c.Chat().ID)
 		slog.Info("New user registered", "username", user.TGUsername)
 		c.Send("Thanks ! I am now setting up your profile...", removeKeyboard)
 		return c.Send("Perfect! You are all setup")
@@ -159,6 +190,8 @@ func (h *Handler) handleTaskCompleted(c tg.Context) error {
 		c.Respond()
 		return fmt.Errorf("Failed to update max streak: %w", err)
 	}
+
+	//taskTagClean := strings.ReplaceAll(strings.Title(strings.ReplaceAll("daily_morning", "_", " ")), " ", "_")
 
 	c.Send(GetFeedbackMessage(taskTag))
 	slog.Info("Task completed clicked", "data", taskTag)
@@ -250,17 +283,21 @@ func (h *Handler) handleStreak(c tg.Context) error {
 		for _, task := range tasks {
 			// Only display active tasks for streaks
 			if task.IsActive {
+				// Determine task-specific emoji
+				// Normalize task tag for consistent matching
+				normalizedTag := strings.ToLower(strings.ReplaceAll(string(task.Tag), " ", "_"))
+				slog.Info("Debugging normalized tag", "normalized_tag", normalizedTag)
 				taskEmoji := "✅" // Default emoji
-				switch task.Tag {
-				case models.TagMorning:
+				switch normalizedTag {
+				case "daily_morning":
 					taskEmoji = "⏰"
-				case models.TagSunlight:
+				case "daily_sunlight":
 					taskEmoji = "☀️"
-				case models.TagExercise:
+				case "daily_excercise":
 					taskEmoji = "💪"
-				case models.TagMeal:
+				case "daily_meal":
 					taskEmoji = "🥗"
-				case models.TagPersonal:
+				case "daily_personal":
 					taskEmoji = "📔" // Journal emoji for personal goal
 				}
 

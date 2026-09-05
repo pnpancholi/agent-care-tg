@@ -26,7 +26,7 @@ const (
 	HealthyMealTag  = "daily_meal"
 )
 
-const EXPIRATION_TIME = 2
+const EXPIRATION_TIME = 60
 
 func New(store *storage.Store, bot *tg.Bot) *Scheduler {
 	return &Scheduler{
@@ -57,43 +57,42 @@ func (s *Scheduler) Stop() {
 	slog.Info("Scheduler stopped.")
 }
 
+//	func (s *Scheduler) testMessage() {
+//		taskTag := "daily_morning"
+//		msg := "Test message for"
+//		users, err := s.store.GetAllUsers()
 //
-// func (s *Scheduler) testMessage() {
-// 	taskTag := "daily_morning"
-// 	msg := "Test message for"
-// 	users, err := s.store.GetAllUsers()
+//		if err != nil {
+//			slog.Error("Failed to access users from DB for sendMessageToAllUsersInTimeZone", "error", err)
+//			return
+//		}
 //
-// 	if err != nil {
-// 		slog.Error("Failed to access users from DB for sendMessageToAllUsersInTimeZone", "error", err)
-// 		return
-// 	}
+//		for _, user := range users {
 //
-// 	for _, user := range users {
+//			markup := &tg.ReplyMarkup{}
+//			doneBtn := markup.Data("Done", taskTag+"_task_completed")
+//			skippedBtn := markup.Data("Skipped", taskTag+"_task_skipped")
+//			markup.Inline(markup.Row(doneBtn, skippedBtn))
+//			formattedMsg := fmt.Sprintf(msg, user.Username)
 //
-// 		markup := &tg.ReplyMarkup{}
-// 		doneBtn := markup.Data("Done", taskTag+"_task_completed")
-// 		skippedBtn := markup.Data("Skipped", taskTag+"_task_skipped")
-// 		markup.Inline(markup.Row(doneBtn, skippedBtn))
-// 		formattedMsg := fmt.Sprintf(msg, user.Username)
+//			msg, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
 //
-// 		msg, err := s.bot.Send(tg.ChatID(user.ChatID), formattedMsg, markup, tg.ModeMarkdown)
-// 		s.scheduleExpiry(msg)
+//			if err != nil {
+//				slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
+//				continue
+//			}
 //
-// 		if err != nil {
-// 			slog.Error("Failed to send message to : ", "username", user.TGUsername, "error", err)
-// 			continue
-// 		}
+//			s.scheduleExpiry(msg)
 //
-// 		if err := s.store.UpdateLastSentAt(&user); err != nil {
-// 			slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
-// 			continue
-// 		}
+//			if err := s.store.UpdateLastSentAt(&user); err != nil {
+//				slog.Error("Failed to update last sent at for : ", "username", user.TGUsername, "error", err)
+//				continue
+//			}
 //
-// 		slog.Info("Updated last_sent_at timestampe for the user")
-// 	}
+//			slog.Info("Updated last_sent_at timestampe for the user")
+//		}
 //
 // }
-
 func (s *Scheduler) sendMorningMessage(localHour uint8) {
 	s.sendMessageToAllUsersInTimeZone(localHour, MorningTag, bot.MsgMorningCheckIn)
 }
@@ -125,7 +124,7 @@ func lastSentCheckPassed(user *models.User, hour uint8) bool {
 	if !user.LastSentAt.Valid {
 		return true
 	}
-	if localTime.Hour() != int(hour) || localTime.Minute() > 10 {
+	if localTime.Hour() != int(hour) {
 		return false
 	}
 
@@ -186,7 +185,7 @@ func (s *Scheduler) scheduleExpiry(msg *tg.Message) {
 
 		_, err := s.bot.Edit(msg, msg.Text, &tg.ReplyMarkup{})
 		if err != nil {
-			slog.Info("expiry worked")
+			slog.Error("Failed to revoke action buttons. Error: ", err)
 		}
 	}()
 }
