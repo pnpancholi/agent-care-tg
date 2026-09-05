@@ -169,7 +169,7 @@ func (h *Handler) handleTaskSkipped(c tg.Context) error {
 		c.Respond()
 		return fmt.Errorf("Failed to reset streak: %w", err)
 	}
-	c.Send("Its Okay")
+	c.Send(GetSetBackMessage())
 	c.Respond()
 	return nil
 }
